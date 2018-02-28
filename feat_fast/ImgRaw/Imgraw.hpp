@@ -80,7 +80,7 @@ public:
 	friend bool operator!=(const ImgRaw& lhs, const ImgRaw& rhs);
 	friend bool operator==(const ImgRaw& lhs, const ImgRaw& rhs);
 	// 獲得大小
-	size_t size() { return this->raw_img.size(); }
+	const size_t size() const { return this->raw_img.size(); }
 	// 重設大小
 	void resize(uint32_t width, uint32_t height, uint16_t bits) {
 		raw_img.resize(width*height * bits/8);
@@ -133,31 +133,7 @@ inline bool operator==(const ImgRaw& lhs, const ImgRaw& rhs) {
 		return 1;
 	} return 0;
 }
-// 寫 BMP 檔
-inline void ImgRaw::bmp(string name, uint32_t bits) {
-	if (bits == 0) { bits = this->bitCount; }
-	vector<unsigned char> img = (*this);// 有重載轉換函式
-	Raw2Img::raw2bmp(name, img, width, height, bits);
-}
-inline void ImgRaw::bmp(string name, uint32_t bits) const {
-	if (bits == 0) { bits = this->bitCount; }
-	vector<unsigned char> img = (*this);// 有重載轉換函式
-	Raw2Img::raw2bmp(name, img, width, height, bits);
-}
-// 轉為灰階
-inline ImgRaw ImgRaw::ConverGray() const {
-	if (bitCount == 24) {
-		ImgRaw gray(this->width, this->height, 8);
-		for (size_t i = 0; i < gray.size(); i++) {
-			const types& R = raw_img[i*3+0];
-			const types& G = raw_img[i*3+1];
-			const types& B = raw_img[i*3+2];
-			gray[i] = (float)(R*0.299 + G*0.587 + B*0.114);
-		} return gray;
-	} else if (bitCount == 8) {
-		return (*this);
-	}
-}
+
 
 
 

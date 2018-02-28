@@ -10,7 +10,6 @@ Final: 2017/11/16
 #include <cmath>
 #include <algorithm>
 
-#include "imglib\imglib.hpp"
 #include "Raw2Img\Raw2Img.hpp"
 #include "Imgraw.hpp"
 
@@ -24,7 +23,7 @@ Final: 2017/11/16
 #define M_PI 3.14159265358979323846
 
 
-
+//----------------------------------------------------------------
 // 快速atan運算
 float fastAtan2f(float dy, float dx){
 	static const float atan2_p1 = 0.9997878412794807f*(float)(180/M_PI);
@@ -125,6 +124,7 @@ float fastAtanf_rad(float dy){
 }
 
 
+//----------------------------------------------------------------
 // ImgRaw 建構子
 ImgRaw::ImgRaw(string bmpname, string path, bool nomal){
 	if(path!="") {
@@ -192,8 +192,35 @@ ImgRaw ImgRaw::rotateImg(size_t x, size_t y, float radius, float sita) {
 }
 
 
+//----------------------------------------------------------------
+// 寫 BMP 檔
+void ImgRaw::bmp(string name, uint32_t bits) {
+	if (bits == 0) { bits = this->bitCount; }
+	vector<unsigned char> img = (*this);// 有重載轉換函式
+	Raw2Img::raw2bmp(name, img, width, height, bits);
+}
+void ImgRaw::bmp(string name, uint32_t bits) const {
+	if (bits == 0) { bits = this->bitCount; }
+	vector<unsigned char> img = (*this);// 有重載轉換函式
+	Raw2Img::raw2bmp(name, img, width, height, bits);
+}
+// 轉為灰階
+ImgRaw ImgRaw::ConverGray() const {
+	if (bitCount == 24) {
+		ImgRaw gray(this->width, this->height, 8);
+		for (size_t i = 0; i < gray.size(); i++) {
+			const types& R = raw_img[i*3+0];
+			const types& G = raw_img[i*3+1];
+			const types& B = raw_img[i*3+2];
+			gray[i] = (float)(R*0.299 + G*0.587 + B*0.114);
+		} return gray;
+	} else if (bitCount == 8) {
+		return (*this);
+	}
+}
 
 
+//----------------------------------------------------------------
 // 畫線
 void Draw::drawLine_p(ImgRaw& img, int y, int x, int y2, int x2, float val) {
 	// 兩點之間的距離差
@@ -360,3 +387,6 @@ void Draw::draw_arrowRGB(ImgRaw& img, int y, int x, float line_len, float sg) {
 	drawLineRGB_s(img, y2, x2, head_len, sg-150);
 	drawLineRGB_s(img, y2, x2, head_len, sg+150);
 }
+
+
+//----------------------------------------------------------------

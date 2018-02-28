@@ -103,6 +103,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\hunan\source\repos\feat_fast\feat_fast\Raw2Img;C:\Users\hunan\source\repos\feat_fast\feat_fast</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -152,15 +153,19 @@
     <ClCompile Include="fastlib\fast_12.c" />
     <ClCompile Include="fastlib\fast_9.c" />
     <ClCompile Include="fastlib\nonmax.c" />
+    <ClCompile Include="harris_coners.cpp" />
     <ClCompile Include="imglib\imglib.cpp" />
     <ClCompile Include="ImgRaw\Imgraw.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="opencvTest.cpp" />
     <ClCompile Include="Raw2Img\Raw2img.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h" />
+    <ClInclude Include="harris_coners.hpp" />
     <ClInclude Include="imglib\imglib.hpp" />
     <ClInclude Include="ImgRaw\Imgraw.hpp" />
+    <ClInclude Include="opencvTest.hpp" />
     <ClInclude Include="Raw2Img\Raw2img.hpp" />
     <ClInclude Include="Raw2Img\Raw2img_type.hpp" />
   </ItemGroup>
