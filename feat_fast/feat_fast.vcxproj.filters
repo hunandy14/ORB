@@ -28,11 +28,11 @@
     <Filter Include="來源檔案\Imgraw\Raw2Img">
       <UniqueIdentifier>{7f903276-29e5-40f6-a394-fcc534fb9768}</UniqueIdentifier>
     </Filter>
-    <Filter Include="來源檔案\Harris">
-      <UniqueIdentifier>{06bfe745-b967-43a0-9400-547734ac00b1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="來源檔案\Feat">
       <UniqueIdentifier>{27c936f0-f52b-491e-ae67-14fc99485825}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="來源檔案\Feat\Harris">
+      <UniqueIdentifier>{06bfe745-b967-43a0-9400-547734ac00b1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -57,49 +57,49 @@
     <ClCompile Include="fastlib\nonmax.c">
       <Filter>來源檔案\fast</Filter>
     </ClCompile>
-    <ClCompile Include="Raw2Img\Raw2img.cpp">
-      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
-    </ClCompile>
     <ClCompile Include="ImgRaw\Imgraw.cpp">
       <Filter>來源檔案\Imgraw</Filter>
-    </ClCompile>
-    <ClCompile Include="imglib\imglib.cpp">
-      <Filter>來源檔案\Imgraw\imglib</Filter>
     </ClCompile>
     <ClCompile Include="opencvTest.cpp">
       <Filter>來源檔案\OpenCV</Filter>
     </ClCompile>
-    <ClCompile Include="harris_coners.cpp">
-      <Filter>來源檔案\Harris</Filter>
+    <ClCompile Include="ImgRaw\imglib\imglib.cpp">
+      <Filter>來源檔案\Imgraw\imglib</Filter>
     </ClCompile>
-    <ClCompile Include="feat.cpp">
+    <ClCompile Include="harris_coners\harris_coners.cpp">
+      <Filter>來源檔案\Feat\Harris</Filter>
+    </ClCompile>
+    <ClCompile Include="feat\feat.cpp">
       <Filter>來源檔案\Feat</Filter>
+    </ClCompile>
+    <ClCompile Include="ImgRaw\Raw2Img\Raw2img.cpp">
+      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
-    <ClInclude Include="Raw2Img\Raw2img.hpp">
-      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
-    </ClInclude>
-    <ClInclude Include="Raw2Img\Raw2img_type.hpp">
-      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
-    </ClInclude>
     <ClInclude Include="ImgRaw\Imgraw.hpp">
       <Filter>來源檔案\Imgraw</Filter>
-    </ClInclude>
-    <ClInclude Include="imglib\imglib.hpp">
-      <Filter>來源檔案\Imgraw\imglib</Filter>
     </ClInclude>
     <ClInclude Include="opencvTest.hpp">
       <Filter>來源檔案\OpenCV</Filter>
     </ClInclude>
-    <ClInclude Include="harris_coners.hpp">
-      <Filter>來源檔案\Harris</Filter>
+    <ClInclude Include="ImgRaw\imglib\imglib.hpp">
+      <Filter>來源檔案\Imgraw\imglib</Filter>
     </ClInclude>
-    <ClInclude Include="feat.hpp">
+    <ClInclude Include="harris_coners\harris_coners.hpp">
+      <Filter>來源檔案\Feat\Harris</Filter>
+    </ClInclude>
+    <ClInclude Include="feat\feat.hpp">
       <Filter>來源檔案\Feat</Filter>
+    </ClInclude>
+    <ClInclude Include="ImgRaw\Raw2Img\Raw2img.hpp">
+      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
+    </ClInclude>
+    <ClInclude Include="ImgRaw\Raw2Img\Raw2img_type.hpp">
+      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
