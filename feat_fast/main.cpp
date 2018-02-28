@@ -3,57 +3,17 @@
 #include <string>
 #include <fstream>
 using namespace std;
-
-#include "Raw2Img\Raw2img.hpp"
-#include "Imgraw\Imgraw.hpp"
-
-extern "C" {
-#include "fastlib\fast.h"
-}
-
 #include <opencv2\opencv.hpp> 
 using namespace cv;
+//====================================================================================
+#include "Imgraw\Imgraw.hpp"
+#include "feat.hpp"
 
-#include "harris_coners.hpp"
-
-#define Fast_THRE 10
-
-class Feat{
-public:
-	Feat(): feat(nullptr), size(0){}
-	~Feat(){
-		if(feat){
-			free(feat);
-			feat = nullptr;
-			size = 0;
-		}
-	}
-public:
-	void fast(const ImgRaw& img){
-		vector<unsigned char> raw_data = img;
-		uchar* data = raw_data.data();
-		const int xsize = img.width, ysize = img.height, stride = xsize, threshold = 16;
-		this->feat = fast9_detect_nonmax(data, xsize, ysize, xsize, threshold, &size);
-	}
-	void harris(const ImgRaw& img){
-		harris_coners(img, &feat, &size, feat, size);
-	}
-public:
-	xy & operator[](size_t idx){ return feat[idx]; }
-	const xy& operator[](size_t idx) const{ return feat[idx]; }
-
-	operator xy* (){
-		return feat;
-	}
-public:
-	xy* feat = nullptr;
-	int size = 0;
-};
 
 //====================================================================================
 void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat){
 	ImgRaw temp = img;
-	for(size_t i = 0; i < feat.size; i++){
+	for(size_t i = 0; i < feat.size(); i++){
 		int x = feat[i].x;
 		int y = feat[i].y;
 		temp.at2d(y, x) = 0;
@@ -62,8 +22,8 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat){
 }
 vector<double> GWCM(const ImgRaw& img, Feat& feat, int radius)
 {
-	vector<double> feat_sita(feat.size);
-	for(int idx = 0; idx < feat.size;){
+	vector<double> feat_sita(feat.size());
+	for(int idx = 0; idx < feat.size();){
 		double m01 = 0;
 		double m10 = 0;
 		for(int j = -radius; j <= radius; j++){
@@ -95,7 +55,7 @@ int main(int argc, char const *argv[]){
 	feat.fast(img1);
 	outFeat2bmp("FAST.bmp", img1, feat);
 
-	int xsize = img1.width, ysize = img1.height, stride = xsize, threshold = 10, numcorners = feat.size;
+	int xsize = img1.width, ysize = img1.height, stride = xsize, threshold = 10, numcorners = feat.size();
 	// Harris 角點偵測.
 	feat.harris(img1);
 	outFeat2bmp("harris.bmp", img1, feat);
@@ -106,7 +66,7 @@ int main(int argc, char const *argv[]){
 	vector<double> sing = GWCM(img1, feat, 3);
 
 	ImgRaw temp = img1;
-	for(size_t i = 0; i < feat.size; i++){
+	for(size_t i = 0; i < feat.size(); i++){
 		Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, sing[i]);
 	}
 	temp.bmp("arrow.bmp");

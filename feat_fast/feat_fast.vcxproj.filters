@@ -31,6 +31,9 @@
     <Filter Include="來源檔案\Harris">
       <UniqueIdentifier>{06bfe745-b967-43a0-9400-547734ac00b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="來源檔案\Feat">
+      <UniqueIdentifier>{27c936f0-f52b-491e-ae67-14fc99485825}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -69,6 +72,9 @@
     <ClCompile Include="harris_coners.cpp">
       <Filter>來源檔案\Harris</Filter>
     </ClCompile>
+    <ClCompile Include="feat.cpp">
+      <Filter>來源檔案\Feat</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h">
@@ -91,6 +97,9 @@
     </ClInclude>
     <ClInclude Include="harris_coners.hpp">
       <Filter>來源檔案\Harris</Filter>
+    </ClInclude>
+    <ClInclude Include="feat.hpp">
+      <Filter>來源檔案\Feat</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
