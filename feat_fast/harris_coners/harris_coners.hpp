@@ -1,9 +1,11 @@
 #pragma once
 
 #include "ImgRaw\Imgraw.hpp"
+
 extern "C" {
 #include "fastlib\fast.h"
 }
+#include "feat\feat.hpp"
 
 class Coor{
 private:
@@ -14,4 +16,4 @@ public:
 	vector<xy> c;
 };
 
-void harris_coners(const ImgRaw & img, xy** feat, int* size);
+void harris_coners(const ImgRaw& img, Feat& feat);

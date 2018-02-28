@@ -7,7 +7,8 @@ using namespace std;
 using namespace cv;
 //====================================================================================
 #include "Imgraw.hpp"
-#include "feat.hpp"
+#include "feat\feat.hpp"
+#include "harris_coners.hpp"
 
 
 //====================================================================================
@@ -57,7 +58,8 @@ int main(int argc, char const *argv[]){
 
 	int xsize = img1.width, ysize = img1.height, stride = xsize, threshold = 10, numcorners = feat.size();
 	// Harris 角點偵測.
-	feat.harris(img1);
+	harris_coners(img1, feat);
+
 	outFeat2bmp("harris.bmp", img1, feat);
 
 
