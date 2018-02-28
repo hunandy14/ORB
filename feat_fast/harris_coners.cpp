@@ -11,10 +11,11 @@ extern "C" {
 using namespace std;
 
 #define HarrisR 2
-void harris_coners(const ImgRaw& img, xy* & feat_harris, int* numcorners_harris, const xy* feat, int numcorners){
+void harris_coners(const ImgRaw& img, xy** feat_harris, int* numcorners_harris, const xy* feat, int numcorners){
 	const int r = HarrisR;
-	feat_harris = new xy[img.width*img.height]{};
-	int& idx_out = *numcorners_harris = 0;
+	//feat_harris = new xy[img.width*img.height]{};
+	xy* feat_t = new xy[img.width*img.height]{};
+	int idx_out = 0;
 
 	vector<bool> h(numcorners);
 	vector<float> cornerStrength(numcorners);
@@ -41,14 +42,29 @@ void harris_coners(const ImgRaw& img, xy* & feat_harris, int* numcorners_harris,
 		const float alpha = 0.04, t = 0.01;
 		const float data = detM - alpha * traceM*traceM;
 		if(data > t){
-			feat_harris[idx_out].x = i;
-			feat_harris[idx_out].y = j;
+			feat_t[idx_out].x = i;
+			feat_t[idx_out].y = j;
+			if(i==0){
+				throw out_of_range("¥X²{0");
+			}
 			h[idx_out] = 1;
 			cornerStrength[idx_out] = data;
 			r_data[j*img.width+i] = data;
 			++idx_out;
 		}
 	}
+	xy* temp = new xy[idx_out];
+	copy_n(feat_t, idx_out, temp);
+	delete[] feat_t;
+
+	*numcorners_harris = idx_out;
+	*feat_harris = temp;
+	temp = nullptr;
+
+
+
+
+
 	// ¹LÂo©P³ò.
 	/*
 	for(int j = 1, c = 0; j < img.height - 1; j++){

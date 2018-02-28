@@ -14,4 +14,4 @@ public:
 	vector<xy> c;
 };
 
-void harris_coners(const ImgRaw & img, xy* & feat_harris, int* numcorners_harris, const xy * feat, int numcorners);
+void harris_coners(const ImgRaw & img, xy** feat_harris, int* numcorners_harris, const xy * feat, int numcorners);
