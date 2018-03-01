@@ -45,18 +45,18 @@ public:
 		return len;
 	}
 	void resize(int size){
-		int idx_out=size;
 		// 建立心空間
-		xy* temp = new xy[idx_out];
+		xy* temp = new xy[size];
 		// 複製到新空間
-		copy_n(feat, idx_out, temp);
+		copy_n(feat, size<len? size: len, temp);
 		// 取代舊空間
 		this->~Feat();
-		len = idx_out;
+		len = size;
 		feat = temp;
 	}
 public:
 	xy* feat = nullptr;
+	float sita = 0.0;
 public:
 	int len = 0;
 };

@@ -52,8 +52,6 @@ void harris_coners(const ImgRaw& img, Feat& feat){
 	// 縮小.
 	feat.~Feat();
 
-	//feat_t.resize(idx_out);
-
 	// todo 這裡為什麼不能刪除
 	xy* temp = new xy[idx_out];
 	copy_n(feat_t.feat, idx_out, temp);

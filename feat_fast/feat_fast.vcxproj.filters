@@ -31,7 +31,7 @@
     <Filter Include="來源檔案\Feat">
       <UniqueIdentifier>{27c936f0-f52b-491e-ae67-14fc99485825}</UniqueIdentifier>
     </Filter>
-    <Filter Include="來源檔案\Feat\Harris">
+    <Filter Include="來源檔案\Harris">
       <UniqueIdentifier>{06bfe745-b967-43a0-9400-547734ac00b1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -67,7 +67,7 @@
       <Filter>來源檔案\Imgraw\imglib</Filter>
     </ClCompile>
     <ClCompile Include="harris_coners\harris_coners.cpp">
-      <Filter>來源檔案\Feat\Harris</Filter>
+      <Filter>來源檔案\Harris</Filter>
     </ClCompile>
     <ClCompile Include="feat\feat.cpp">
       <Filter>來源檔案\Feat</Filter>
@@ -90,7 +90,7 @@
       <Filter>來源檔案\Imgraw\imglib</Filter>
     </ClInclude>
     <ClInclude Include="harris_coners\harris_coners.hpp">
-      <Filter>來源檔案\Feat\Harris</Filter>
+      <Filter>來源檔案\Harris</Filter>
     </ClInclude>
     <ClInclude Include="feat\feat.hpp">
       <Filter>來源檔案\Feat</Filter>
@@ -101,5 +101,13 @@
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img_type.hpp">
       <Filter>來源檔案\Imgraw\Raw2Img</Filter>
     </ClInclude>
+    <ClInclude Include="ORB_bit_pattern_31_.hpp">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="testCode.hpp">
+      <Filter>標頭檔</Filter>
+    </None>
   </ItemGroup>
 </Project>

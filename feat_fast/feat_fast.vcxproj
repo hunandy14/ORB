@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\hunan\source\repos\feat_fast\feat_fast\ImgRaw;C:\Users\hunan\source\repos\feat_fast\feat_fast;C:\Users\hunan\source\repos\feat_fast\feat_fast\harris_coners</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\ImgRaw;$(ProjectDir)\harris_coners;$(ProjectDir)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
@@ -136,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\hunan\source\repos\feat_fast\feat_fast\ImgRaw;C:\Users\hunan\source\repos\feat_fast\feat_fast;C:\Users\hunan\source\repos\feat_fast\feat_fast\harris_coners</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\ImgRaw;$(ProjectDir)\harris_coners;$(ProjectDir)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
@@ -170,6 +170,10 @@
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img.hpp" />
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img_type.hpp" />
     <ClInclude Include="opencvTest.hpp" />
+    <ClInclude Include="ORB_bit_pattern_31_.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="testCode.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
