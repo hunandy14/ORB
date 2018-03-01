@@ -2,11 +2,12 @@
 #include <vector>
 #include <string>
 
-#include "ImgRaw\Imgraw.hpp"
+#include "Imgraw.hpp"
 extern "C" {
 #include "fastlib\fast.h"
 }
-#include "feat\feat.hpp"
+
+#include "feat.hpp"
 #include "harris_coners.hpp"
 using namespace std;
 

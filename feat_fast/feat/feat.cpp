@@ -6,7 +6,8 @@
 extern "C" {
 #include "fastlib\fast.h"
 }
-#include "feat\feat.hpp"
+
+#include "feat.hpp"
 
 
 

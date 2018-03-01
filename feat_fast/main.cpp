@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 //====================================================================================
 #include "Imgraw.hpp"
-#include "feat\feat.hpp"
+#include "feat.hpp"
 #include "harris_coners.hpp"
 #include "ORB_bit_pattern_31_.hpp"
 
@@ -45,11 +45,12 @@ vector<double> GWCM(const ImgRaw& img, Feat& feat, int radius) {
 	return feat_sita;
 }
 //====================================================================================
-
+// 取平均
 double average(const ImgRaw& img, int x, int y) {
 	double avg = 0.0;
-	for(int j = -2; j <= 2; j++) {
-		for(int i = -2; i <= 2; i++) {
+	int r = 2;
+	for(int j = -r; j <= r; j++) {
+		for(int i = -r; i <= r; i++) {
 			int thisx = x + i;
 			int thisy = y + j;
 			int posi = thisy * img.width + thisx;
@@ -64,7 +65,7 @@ double average(const ImgRaw& img, int x, int y) {
 	avg /= 25;
 	return avg;
 }
-
+// 描述特徵點核心
 bool Compare(const ImgRaw& img, Feat& feat, int x1, int y1, int x2, int y2) {
 	double point1, point2;
 	point1 = average(img, x1, y1);
@@ -72,7 +73,7 @@ bool Compare(const ImgRaw& img, Feat& feat, int x1, int y1, int x2, int y2) {
 	if(point1 > point2) return true;
 	else return false;
 }
-// n is mask size
+// 積分模糊
 void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 	newimg = img;
 	if(n < 3) {
@@ -117,7 +118,10 @@ int main(int argc, char const *argv[]) {
 		Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, sing[i]);
 	}
 	temp.bmp("arrow.bmp");
-
+	// 模糊
+	ImgRaw img2;
+	Lowpass(img1, img2, 3);
+	img2.bmp("Lowpass.bmp");
 
 
 	return 0;

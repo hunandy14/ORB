@@ -1,16 +1,11 @@
 #pragma once
-#include <iostream>
-#include <vector>
-#include <string>
 
 extern "C" {
 #include "fastlib\fast.h"
 }
 
-
 using namespace std;
 typedef unsigned char uchar;
-
 
 
 class Feat{
