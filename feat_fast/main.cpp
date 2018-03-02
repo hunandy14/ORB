@@ -22,7 +22,8 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	}
 	temp.bmp(name);
 }
-vector<double> GWCM(const ImgRaw& img, Feat& feat, int radius) {
+// 灰度質心法
+void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	vector<double> feat_sita(feat.size());
 	for(int idx = 0; idx < feat.size();) {
 		double m01 = 0;
@@ -43,9 +44,16 @@ vector<double> GWCM(const ImgRaw& img, Feat& feat, int radius) {
 		}
 		feat_sita[idx++] = fastAtan2(m01, m10);
 	}
-	return feat_sita;
+	feat.sita = std::move(feat_sita);
 }
 //====================================================================================
+// 獲得FAST特徵點
+void fast(const ImgRaw& img, Feat& feat){
+	vector<unsigned char> raw_data = img;
+	uchar* data = raw_data.data();
+	const int xsize = img.width, ysize = img.height, stride = xsize, threshold = 16;
+	feat.feat = fast9_detect_nonmax(data, xsize, ysize, xsize, threshold, &feat.len);
+}
 // 積分模糊
 void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 	newimg = img;
@@ -112,8 +120,7 @@ static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 	}
 }
 // 描述一個特徵點
-using OrbDest = bitset<128>;
-OrbDest destp(const ImgRaw& img, int x, int y, vector<double> sing) {
+static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, vector<double> sing) {
 	OrbDest bin;
 	for(size_t k = 0; k < 128; k++) {
 		// 根據角度選不同位移組
@@ -128,6 +135,20 @@ OrbDest destp(const ImgRaw& img, int x, int y, vector<double> sing) {
 	}
 	return bin;
 }
+// 描述所有特徵點
+void desc_ORB(const ImgRaw& img, Feat& feat) {
+	ImgRaw img2;
+	Lowpass(img, img2, 3);
+	vector<OrbDest> bin(feat.size());
+	for(size_t i = 0; i < feat.size(); i++) {
+		// 描述
+		int x = feat[i].x;
+		int y = feat[i].y;
+		bin[i] = descriptor_ORB(img2, x, y, feat.sita);
+	}
+	feat.bin = std::move(bin);
+}
+
 // 漢明距離
 int hamDist(const OrbDest& a, const OrbDest& b) {
 	return (a^b).count();
@@ -136,8 +157,44 @@ int hamDist(const OrbDest& a, const OrbDest& b) {
 void matchORB(Feat& feat1, const Feat& feat2) {
 
 }
+
+
+void create_ORB(const ImgRaw& img, Feat& feat) {
+	// FAST特徵點
+	fast(img, feat);
+	// Harris過濾角點
+	harris_coners(img, feat);
+	// 灰度重心法
+	GrayCenterOfMass(img, feat, 3);
+	// 描述特徵
+	desc_ORB(img, feat);
+}
 //====================================================================================
 int main(int argc, char const *argv[]) {
+	// 讀寫 Bmp
+	ImgRaw img1("kanna.bmp");
+	img1 = img1.ConverGray();
+	// 獲取特徵點.
+	Feat feat;
+	create_ORB(img1, feat);
+
+	// 測試
+	for(size_t i = 0; i < 2; i++) {
+		for(size_t k = 0; k < 128; k++) {
+			cout << feat.bin[i][k];
+		} cout << endl;
+	}
+	int dis = hamDist(feat.bin[0], feat.bin[1]);
+	cout << "dis=" << dis << endl;
+
+	// 尋找配對點
+
+	return 0;
+}
+//====================================================================================
+
+
+void get_ORB_bin_test() {
 	// 讀寫 Bmp
 	ImgRaw img1("kanna.bmp");
 	img1 = img1.ConverGray();
@@ -149,7 +206,8 @@ int main(int argc, char const *argv[]) {
 	harris_coners(img1, feat);
 	outFeat2bmp("harris.bmp", img1, feat);
 	// 灰度質心
-	vector<double> sing = GWCM(img1, feat, 3);
+	GrayCenterOfMass(img1, feat, 3);
+	vector<double> sing = feat.sita;
 	// 畫箭頭
 	ImgRaw temp = img1;
 	for(size_t i = 0; i < feat.size(); i++) {
@@ -167,7 +225,7 @@ int main(int argc, char const *argv[]) {
 		// 描述
 		int x = feat[i].x;
 		int y = feat[i].y;
-		bin[i] = destp(img2, x, y, sing);
+		bin[i] = descriptor_ORB(img2, x, y, sing);
 	}
 
 	// 測試
@@ -178,9 +236,4 @@ int main(int argc, char const *argv[]) {
 	}
 	int dis = hamDist(bin[0], bin[1]);
 	cout << "dis=" << dis << endl;
-
-	// 尋找配對點
-
-	return 0;
 }
-//====================================================================================

@@ -1,12 +1,12 @@
 #pragma once
-
+#include <bitset>
 extern "C" {
 #include "fastlib\fast.h"
 }
 
 using namespace std;
 typedef unsigned char uchar;
-
+using OrbDest = bitset<128>;
 
 class Feat{
 public:
@@ -55,7 +55,8 @@ public:
 public:
 	xy* feat = nullptr;
 	xy* feat_match = nullptr;
-	float sita = 0.0;
+	vector<OrbDest> bin;
+	vector<double> sita;
 public:
 	int len = 0;
 };
