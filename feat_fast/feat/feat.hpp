@@ -54,6 +54,7 @@ public:
 	}
 public:
 	xy* feat = nullptr;
+	xy* feat_match = nullptr;
 	float sita = 0.0;
 public:
 	int len = 0;

@@ -46,6 +46,31 @@ vector<double> GWCM(const ImgRaw& img, Feat& feat, int radius) {
 	return feat_sita;
 }
 //====================================================================================
+// 積分模糊
+void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
+	newimg = img;
+	if(n < 3) {
+		throw out_of_range("遮罩不該小於3");
+	}
+	int dn = (n - 1) / 2;
+	for(int j = dn; j < img.height - dn; j++) {
+		for(int i = dn; i < img.width - dn; i++) {
+			int total = 0;
+			int thisx = i;
+			int thisy = j;
+			int posi = thisy * img.width + thisx;
+			for(int dy = -dn; dy <= dn; dy++) {
+				for(int dx = -dn; dx <= dn; dx++) {
+					thisx = i + dx;
+					thisy = j + dy;
+					posi = thisy * img.width + thisx;
+					total += img[posi];
+				}
+			}
+			newimg[posi] = (int)(total / 9);
+		}
+	}
+}
 // 取平均
 static double average(const ImgRaw& img, int x, int y) {
 	double avg = 0.0;
@@ -87,8 +112,9 @@ static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 	}
 }
 // 描述一個特徵點
-auto destp(const ImgRaw& img, int x, int y, vector<double> sing) {
-	bitset<128> bin;
+using OrbDest = bitset<128>;
+OrbDest destp(const ImgRaw& img, int x, int y, vector<double> sing) {
+	OrbDest bin;
 	for(size_t k = 0; k < 128; k++) {
 		// 根據角度選不同位移組
 		int singIdx = floor(sing[k]/30.f);
@@ -102,30 +128,13 @@ auto destp(const ImgRaw& img, int x, int y, vector<double> sing) {
 	}
 	return bin;
 }
-// 積分模糊
-void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
-	newimg = img;
-	if(n < 3) {
-		throw out_of_range("遮罩不該小於3");
-	}
-	int dn = (n - 1) / 2;
-	for(int j = dn; j < img.height - dn; j++) {
-		for(int i = dn; i < img.width - dn; i++) {
-			int total = 0;
-			int thisx = i;
-			int thisy = j;
-			int posi = thisy * img.width + thisx;
-			for(int dy = -dn; dy <= dn; dy++) {
-				for(int dx = -dn; dx <= dn; dx++) {
-					thisx = i + dx;
-					thisy = j + dy;
-					posi = thisy * img.width + thisx;
-					total += img[posi];
-				}
-			}
-			newimg[posi] = (int)(total / 9);
-		}
-	}
+// 漢明距離
+int hamDist(const OrbDest& a, const OrbDest& b) {
+	return (a^b).count();
+}
+// 配對ORB
+void matchORB(Feat& feat1, const Feat& feat2) {
+
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
@@ -153,7 +162,7 @@ int main(int argc, char const *argv[]) {
 	img2.bmp("Lowpass.bmp");
 
 	// 描述
-	vector <bitset<128>> bin(feat.size());
+	vector<OrbDest> bin(feat.size());
 	for(size_t i = 0; i < feat.size(); i++) {
 		// 描述
 		int x = feat[i].x;
@@ -161,16 +170,17 @@ int main(int argc, char const *argv[]) {
 		bin[i] = destp(img2, x, y, sing);
 	}
 
-	for(size_t i = 0; i < 10; i++) {
+	// 測試
+	for(size_t i = 0; i < 2; i++) {
 		for(size_t k = 0; k < 128; k++) {
 			cout << bin[i][k];
 		} cout << endl;
 	}
+	int dis = hamDist(bin[0], bin[1]);
+	cout << "dis=" << dis << endl;
+
+	// 尋找配對點
 
 	return 0;
 }
-
-
-
-
 //====================================================================================
