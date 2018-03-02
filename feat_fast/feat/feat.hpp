@@ -43,7 +43,10 @@ public:
 		// 建立心空間
 		xy* temp = new xy[size];
 		// 複製到新空間
-		copy_n(feat, size<len? size: len, temp);
+		//copy_n(feat, size<len? size: len, temp);
+		for(size_t i = 0; i < size<len? size: len; i++) {
+			temp[i] = feat[i];
+		}
 		// 取代舊空間
 		this->~Feat();
 		len = size;

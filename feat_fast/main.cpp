@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <bitset>
 using namespace std;
 #include <opencv2\opencv.hpp> 
 using namespace cv;
@@ -46,7 +47,7 @@ vector<double> GWCM(const ImgRaw& img, Feat& feat, int radius) {
 }
 //====================================================================================
 // 取平均
-double average(const ImgRaw& img, int x, int y) {
+static double average(const ImgRaw& img, int x, int y) {
 	double avg = 0.0;
 	int r = 2;
 	for(int j = -r; j <= r; j++) {
@@ -56,6 +57,7 @@ double average(const ImgRaw& img, int x, int y) {
 			int posi = thisy * img.width + thisx;
 			if((thisx < 0.0 or thisx >= img.width) or
 				(thisy < 0.0 or thisy >= img.height)) {
+				// todo 好像不能避免出現
 				throw out_of_range("出現負號");
 			} else {
 				avg += img[posi];
@@ -65,13 +67,32 @@ double average(const ImgRaw& img, int x, int y) {
 	avg /= 25;
 	return avg;
 }
-// 描述特徵點核心
-bool Compare(const ImgRaw& img, Feat& feat, int x1, int y1, int x2, int y2) {
-	double point1, point2;
-	point1 = average(img, x1, y1);
-	point2 = average(img, x2, y2);
-	if(point1 > point2) return true;
-	else return false;
+// 描述特徵點內的一個bit
+bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
+	double point1 = average(img, x1, y1);
+	double point2 = average(img, x2, y2);
+
+	if(point1 > point2) {
+		return true;
+	} else {
+		return false;
+	}
+}
+// 描述一個特徵點
+auto destp(const ImgRaw& img, int x, int y, vector<double> sing) {
+	bitset<128> bin;
+	for(size_t k = 0; k < 128; k++) {
+		// 根據角度選不同位移組
+		int singIdx = floor(sing[k]/30.f);
+		// 描述點對
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
+		bin[k] = Compare(img, x1, y1, x2, y2);
+
+	}
+	return bin;
 }
 // 積分模糊
 void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
@@ -123,6 +144,20 @@ int main(int argc, char const *argv[]) {
 	Lowpass(img1, img2, 3);
 	img2.bmp("Lowpass.bmp");
 
+	// 描述
+	vector <bitset<128>> bin(feat.size());
+	for(size_t i = 0; i < feat.size(); i++) {
+		// 描述
+		int x = feat[i].x;
+		int y = feat[i].y;
+		bin[i] = destp(img2, x, y, sing);
+	}
+
+	for(size_t i = 0; i < 10; i++) {
+		for(size_t k = 0; k < 128; k++) {
+			cout << bin[i][k];
+		} cout << endl;
+	}
 
 	return 0;
 }
