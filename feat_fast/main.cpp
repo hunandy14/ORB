@@ -54,21 +54,29 @@ static double average(const ImgRaw& img, int x, int y) {
 		for(int i = -r; i <= r; i++) {
 			int thisx = x + i;
 			int thisy = y + j;
-			int posi = thisy * img.width + thisx;
-			if((thisx < 0.0 or thisx >= img.width) or
-				(thisy < 0.0 or thisy >= img.height)) {
-				// todo 好像不能避免出現
-				throw out_of_range("出現負號");
-			} else {
-				avg += img[posi];
+			// 處理負號
+			if(thisx < 0.0 ) {
+				thisx = 0;
 			}
+			if(thisx >= img.width) {
+				thisx = img.width-1;
+			}
+			if(thisy < 0.0) {
+				thisy = 0;
+			}
+			if(thisy >= img.height) {
+				thisy = img.height-1;
+			}
+			// 累加
+			int posi = thisy * img.width + thisx;
+			avg += img[posi];
 		}
 	}
 	avg /= 25;
 	return avg;
 }
 // 描述特徵點內的一個bit
-bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
+static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 	double point1 = average(img, x1, y1);
 	double point2 = average(img, x2, y2);
 
@@ -89,8 +97,8 @@ auto destp(const ImgRaw& img, int x, int y, vector<double> sing) {
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
+		
 		bin[k] = Compare(img, x1, y1, x2, y2);
-
 	}
 	return bin;
 }
