@@ -342,7 +342,7 @@ void Draw::drawLineRGB_p(ImgRaw& img, int y, int x, int y2, int x2,
 void Draw::drawLineRGB_p(ImgRaw& img, int y, int x, int y2, int x2) {
 	// ÀH¾÷ÃC¦â
 	auto random_num = [] {
-		return ((rand() / (RAND_MAX+1.0)) * (1 - 0) + 0);
+		return ((rand() / (RAND_MAX+1.0)) * (DrawPixNomal - 0) + 0);
 	};
 	float rVal = random_num();
 	float gVal = random_num();

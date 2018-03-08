@@ -82,7 +82,7 @@ void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 // 取平均
 static double average(const ImgRaw& img, int x, int y) {
 	double avg = 0.0;
-	int r = 2;
+	const int r = 2;
 	for(int j = -r; j <= r; j++) {
 		for(int i = -r; i <= r; i++) {
 			int thisx = x + i;
@@ -105,7 +105,7 @@ static double average(const ImgRaw& img, int x, int y) {
 			avg += img[posi];
 		}
 	}
-	avg /= 25;
+	avg /= 25.0;
 	return avg;
 }
 // 描述特徵點內的一個bit
@@ -124,8 +124,16 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, vector<double> si
 	OrbDest bin;
 	for(size_t k = 0; k < 128; k++) {
 		// 根據角度選不同位移組
-		int singIdx = floor(sing[k]/30.f);
+		
 		// 描述點對
+		/* const int singIdx = floor(sing[k]/30.f);
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
+
+		// 不旋轉
+		const int singIdx = 0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
@@ -148,17 +156,6 @@ void desc_ORB(const ImgRaw& img, Feat& feat) {
 	}
 	feat.bin = std::move(bin);
 }
-
-// 漢明距離
-int hamDist(const OrbDest& a, const OrbDest& b) {
-	return (a^b).count();
-}
-// 配對ORB
-void matchORB(Feat& feat1, const Feat& feat2) {
-
-}
-
-
 void create_ORB(const ImgRaw& img, Feat& feat) {
 	// FAST特徵點
 	fast(img, feat);
@@ -169,25 +166,102 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	// 描述特徵
 	desc_ORB(img, feat);
 }
+
+// 漢明距離
+int hamDist(const OrbDest& a, const OrbDest& b) {
+	return (a^b).count();
+}
+// 配對ORB
+void matchORB(Feat& feat1, const Feat& feat2) {
+	// todo 這裡還沒 delete
+	feat1.feat_match = new xy[feat1.size()];
+
+	for(size_t j = 0; j < feat1.size(); j++) {
+		int dist = numeric_limits<int>::max();
+		int matchIdx = -1;
+		int distCurr = 0;
+		for(size_t i = 0; i < feat2.size(); i++) {
+			distCurr = hamDist(feat1.bin[j], feat2.bin[i]);
+			// 距離較短則更新
+			if(distCurr < dist) {
+				dist = distCurr;
+				matchIdx = i;
+			}
+		}
+		// 加入匹配點
+		//cout << "distCurr=" << distCurr << endl;
+		if(distCurr > 64 or
+			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 10 )
+		{
+			feat1.feat_match[j].x = -1;
+			feat1.feat_match[j].y = -1;
+		} else {
+			feat1.feat_match[j].x = feat2.feat[matchIdx].x;
+			feat1.feat_match[j].y = feat2.feat[matchIdx].y;
+		}
+	}
+}
+
+// 合併兩張圖
+ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
+	ImgRaw stackImg;
+	int Width  = img1.width+img2.width;
+	int Height = img1.height;
+	// 合併兩張圖
+	stackImg.resize(img1.width*2, img2.height, 24);
+	for (size_t j = 0; j < img1.height; j++) {
+		for (size_t i = 0; i < img1.width; i++) {
+			stackImg[(j*stackImg.width+i)*3 + 0] = img1[(j*img1.width+i)*3 + 0];
+			stackImg[(j*stackImg.width+i)*3 + 1] = img1[(j*img1.width+i)*3 + 1];
+			stackImg[(j*stackImg.width+i)*3 + 2] = img1[(j*img1.width+i)*3 + 2];
+		}
+		for (size_t i = img1.width; i < img2.width+img1.width; i++) {
+			stackImg[(j*stackImg.width+i)*3 + 0] = img2[(j*img1.width+i-img1.width)*3 + 0];
+			stackImg[(j*stackImg.width+i)*3 + 1] = img2[(j*img1.width+i-img1.width)*3 + 1];
+			stackImg[(j*stackImg.width+i)*3 + 2] = img2[(j*img1.width+i-img1.width)*3 + 2];
+		}
+	}
+	return stackImg;
+}
+static void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
+	size_t featNum = feat.size();
+	ImgRaw outImg = stackImg;
+	for(int i = 0; i < featNum; i++) {
+		if(feat.feat_match[i].x != -1) {
+			const int& x1 = feat.feat[i].x;
+			const int& y1 = feat.feat[i].y;
+			const int& x2 = feat.feat_match[i].x + (outImg.width *.5);
+			const int& y2 = feat.feat_match[i].y;
+			Draw::drawLineRGB_p(outImg, y1, x1, y2, x2);
+		}
+	}
+	outImg.bmp(name, 24);
+}
 //====================================================================================
 int main(int argc, char const *argv[]) {
-	// 讀寫 Bmp
-	ImgRaw img1("kanna.bmp");
-	img1 = img1.ConverGray();
-	// 獲取特徵點.
+	// 開圖
+	ImgRaw img1("sc01.bmp");
+	ImgRaw img1_gray = img1.ConverGray();
+	// ORB
 	Feat feat;
-	create_ORB(img1, feat);
+	create_ORB(img1_gray, feat);
 
-	// 測試
-	for(size_t i = 0; i < 2; i++) {
-		for(size_t k = 0; k < 128; k++) {
-			cout << feat.bin[i][k];
-		} cout << endl;
-	}
-	int dis = hamDist(feat.bin[0], feat.bin[1]);
-	cout << "dis=" << dis << endl;
+	// 開圖
+	ImgRaw img2("sc02.bmp");
+	ImgRaw img2_gray = img2.ConverGray();
+	// ORB
+	Feat feat2;
+	create_ORB(img2_gray, feat2);
 
+	
 	// 尋找配對點
+	matchORB(feat, feat2);
+	
+	// 測試配對點
+	ImgRaw stackImg = imgMerge(img1, img2);
+	stackImg.bmp("merge.bmp");
+	featDrawLine("line.bmp", stackImg, feat);
+
 
 	return 0;
 }
