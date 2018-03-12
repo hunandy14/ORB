@@ -11,7 +11,7 @@ using namespace cv;
 #include "feat.hpp"
 #include "harris_coners.hpp"
 #include "ORB_bit_pattern_31_.hpp"
-
+#include "opencvTest.hpp"
 //====================================================================================
 void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	ImgRaw temp = img;
@@ -28,6 +28,7 @@ void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	for(int idx = 0; idx < feat.size();) {
 		double m01 = 0;
 		double m10 = 0;
+
 		for(int j = -radius; j <= radius; j++) {
 			for(int i = -radius; i <= radius; i++) {
 				int thisx = feat[idx].x + i;
@@ -35,13 +36,16 @@ void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 				int posi = thisy * img.width + thisx;
 				if((thisx < 0.0 or thisx >= img.width) or
 					(thisy < 0.0 or thisy >= img.height)) {
-					throw out_of_range("出現負號");
+					cout << "thisx=" << thisx << endl;
+					cout << "thisy=" << thisy << endl;
+					//throw out_of_range("出現負號");
 				} else {
 					m10 += i * img[posi];
 					m01 += j * img[posi];
 				}
 			}
 		}
+
 		feat_sita[idx++] = fastAtan2(m01, m10);
 	}
 	feat.sita = std::move(feat_sita);
@@ -126,18 +130,18 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, vector<double> si
 		// 根據角度選不同位移組
 		
 		// 描述點對
-		/* const int singIdx = floor(sing[k]/30.f);
-		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
-		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
-		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
-		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
-
-		// 不旋轉
-		const int singIdx = 0;
+		const int singIdx = floor(sing[k]/30.f);
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
+
+		// 不旋轉
+		/*const int singIdx = 0;
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
 		
 		bin[k] = Compare(img, x1, y1, x2, y2);
 	}
@@ -160,7 +164,70 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	// FAST特徵點
 	fast(img, feat);
 	// Harris過濾角點
-	harris_coners(img, feat);
+	//harris_coners(img, feat);
+
+
+	Mat image(img.height, img.width, CV_32F, (void*)img.raw_img.data());
+	Mat gray=image;
+	// 初始化mask
+	Mat mask(Mat::zeros(Size(img.width, img.height),CV_8U));
+	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
+	// 把 feat 的 xy 轉到 mask
+	int edg=30;
+	for(size_t i = 0; i < feat.len; i++) {
+		//idx = (feat.feat->y)*image.rows + (feat.feat->x);
+		int x=feat[i].x;
+		int y=feat[i].y;
+		Point pt(x, y);
+		//cout << "string=" << pt << endl;
+
+		// 過濾邊緣位置
+		if(x>=(3+edg) and x<=img.width-(3+edg) && y>=(3+edg) and y<=img.height-(3+edg)) {
+			mask.at<uchar>(pt) = 255;
+		}
+	}
+	
+	//cout << "idx=" << feat.len << endl;
+	vector<Point2f> corners;
+	goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
+	cout << "corners=" << corners.size() << endl;
+
+
+	// 回填 xy 位置
+	int newLen=0;
+	for(int i = 0; i < corners.size(); i++) {
+		int x=corners[i].x;
+		int y=corners[i].y;
+		
+		if(x<edg) {
+			throw("x<edg");
+		}
+		if(i==1) {
+			cout << "x=" << x << endl;
+		}
+
+		feat[i].x = x;
+		feat[i].y = y;
+		newLen++;
+	}
+	feat.len=corners.size();
+
+	/*
+	RNG rng(12345);
+	image = imread("sc02.bmp");
+	for(size_t i = 0; i < corners.size(); i++){
+		Scalar color;
+		color = Scalar(rng.uniform(0,255), rng.uniform(0, 255), rng.uniform(0, 255));
+		color = Scalar(0, 0, 255);
+		circle(image, corners[i], 5, color, 1);
+	}
+	imshow("goodFeaturesToTrack", image);
+	waitKey();
+	*/
+
+
+
+
 	// 灰度重心法
 	GrayCenterOfMass(img, feat, 3);
 	// 描述特徵
@@ -190,8 +257,8 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 		}
 		// 加入匹配點
 		//cout << "distCurr=" << distCurr << endl;
-		if(distCurr > 64 or
-			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 10 )
+		if(distCurr > 128 or
+			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000 )
 		{
 			feat1.feat_match[j].x = -1;
 			feat1.feat_match[j].y = -1;
@@ -232,6 +299,10 @@ static void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) 
 			const int& y1 = feat.feat[i].y;
 			const int& x2 = feat.feat_match[i].x + (outImg.width *.5);
 			const int& y2 = feat.feat_match[i].y;
+			/*if(x1 < 100) {
+				cout << "size=" <<feat.size() << ", i=" << i << ", x1="<<x1<<endl;
+				throw ("X>100");
+			}*/
 			Draw::drawLineRGB_p(outImg, y1, x1, y2, x2);
 		}
 	}
@@ -239,15 +310,21 @@ static void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) 
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
+//#define harrisTest
+#ifdef harrisTest
+	opencvHarris3();
+#else
+
 	// 開圖
-	ImgRaw img1("sc01.bmp");
+	ImgRaw img1("sc02.bmp");
 	ImgRaw img1_gray = img1.ConverGray();
 	// ORB
 	Feat feat;
 	create_ORB(img1_gray, feat);
 
+	
 	// 開圖
-	ImgRaw img2("sc02.bmp");
+	ImgRaw img2("sc03.bmp");
 	ImgRaw img2_gray = img2.ConverGray();
 	// ORB
 	Feat feat2;
@@ -261,6 +338,11 @@ int main(int argc, char const *argv[]) {
 	ImgRaw stackImg = imgMerge(img1, img2);
 	stackImg.bmp("merge.bmp");
 	featDrawLine("line.bmp", stackImg, feat);
+	
+	
+#endif // harrisTest
+
+
 
 
 	return 0;

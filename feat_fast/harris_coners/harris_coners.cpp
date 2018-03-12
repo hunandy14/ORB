@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <opencv2\opencv.hpp> 
+using namespace cv;
 
 
 #include "Imgraw.hpp"
@@ -63,7 +65,7 @@ void harris_coners(const ImgRaw& img, Feat& feat){
 	feat.feat = temp;
 	temp = nullptr;
 
-
+	cout << "idx_out==" << idx_out << endl;
 
 
 
