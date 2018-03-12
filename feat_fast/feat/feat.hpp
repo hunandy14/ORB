@@ -57,7 +57,7 @@ public:
 	xy* feat_match = nullptr;
 	vector<OrbDest> bin;
 	vector<double> sita;
-	vector<int> dist;
+	vector<int> distance;
 public:
 	int len = 0;
 };

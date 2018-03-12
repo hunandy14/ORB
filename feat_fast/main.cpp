@@ -38,7 +38,7 @@ void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 					(thisy < 0.0 or thisy >= img.height)) {
 					cout << "thisx=" << thisx << endl;
 					cout << "thisy=" << thisy << endl;
-					//throw out_of_range("出現負號");
+					throw out_of_range("出現負號");
 				} else {
 					m10 += i * img[posi];
 					m01 += j * img[posi];
@@ -124,24 +124,25 @@ static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 	}
 }
 // 描述一個特徵點
-static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, vector<double> sing) {
+static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 	OrbDest bin;
 	for(size_t k = 0; k < 128; k++) {
 		// 根據角度選不同位移組
 		
 		// 描述點對
-		const int singIdx = floor(sing[k]/30.f);
-		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
-		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
-		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
-		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
-
-		// 不旋轉
-		/*const int singIdx = 0;
+		// todo 乾 這裡好像有錯
+		/*const int singIdx = sing/30.0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
+
+		// 不旋轉
+		const int singIdx = 0;
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
 		
 		bin[k] = Compare(img, x1, y1, x2, y2);
 	}
@@ -156,7 +157,7 @@ void desc_ORB(const ImgRaw& img, Feat& feat) {
 		// 描述
 		int x = feat[i].x;
 		int y = feat[i].y;
-		bin[i] = descriptor_ORB(img2, x, y, feat.sita);
+		bin[i] = descriptor_ORB(img2, x, y, (feat.sita)[i]);
 	}
 	feat.bin = std::move(bin);
 }
@@ -243,12 +244,13 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 	// todo 這裡還沒 delete
 	feat1.feat_match = new xy[feat1.size()];
 
+	int max_dist = 0; int min_dist = 100;
+	feat1.distance.resize(feat1.size());
 	for(size_t j = 0; j < feat1.size(); j++) {
 		int dist = numeric_limits<int>::max();
 		int matchIdx = -1;
-		int distCurr = 0;
 		for(size_t i = 0; i < feat2.size(); i++) {
-			distCurr = hamDist(feat1.bin[j], feat2.bin[i]);
+			int distCurr = hamDist(feat1.bin[j], feat2.bin[i]);
 			// 距離較短則更新
 			if(distCurr < dist) {
 				dist = distCurr;
@@ -257,7 +259,7 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 		}
 		// 加入匹配點
 		//cout << "distCurr=" << distCurr << endl;
-		if(distCurr > 128 or
+		if(dist > 128 or
 			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000 )
 		{
 			feat1.feat_match[j].x = -1;
@@ -265,8 +267,69 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 		} else {
 			feat1.feat_match[j].x = feat2.feat[matchIdx].x;
 			feat1.feat_match[j].y = feat2.feat[matchIdx].y;
+			feat1.distance[j] = dist;
+		}
+
+		// 計算最大最小距離
+		if(dist < min_dist) min_dist = dist;
+		if(dist > max_dist) max_dist = dist;
+	}
+	
+	//-- Quick calculation of max and min distances between keypoints
+	printf("-- Max dist : %d \n", max_dist);
+	printf("-- Min dist : %d \n", min_dist);
+
+	//-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
+	
+	feat1.distance.resize(feat1.size());
+	for(int i = 0; i < feat1.size(); i++){
+		if(feat1.distance[i] > 5 * min_dist) {
+			//cout << "TEST=" << endl;
+			//good_matches.push_back(matches[i]);
+			feat1.feat_match[i].x = -1;
+			feat1.feat_match[i].y = -1;
+			feat1.distance[i] = 0;
 		}
 	}
+	
+
+	// get feat point
+	vector<Point2f> featPoint1;
+	vector<Point2f> featPoint2;
+	for(size_t i = 0; i < feat1.size(); i++){
+		//-- Get the keypoints from the good matches
+		int x=feat1[i].x;
+		int y=feat1[i].y;
+		Point pt(x, y);
+		int x2=feat1.feat_match[i].x;
+		int y2=feat1.feat_match[i].y;
+		Point pt2(x2, y2);
+
+		if(x2!=-1 and y2!=-1) {
+			featPoint1.push_back(pt);
+			featPoint2.push_back(pt2);
+		}
+	}
+	// get Homography and RANSAC mask
+	vector<char> RANSAC_mask;
+	Mat Hog = findHomography(featPoint1, featPoint2, RANSAC, 3, RANSAC_mask, 2000, 0.995);
+	// 更新到 feat
+	
+	feat1.len=featPoint1.size();
+	for(size_t i = 0; i < featPoint1.size(); i++) {
+		if(RANSAC_mask[i]!=0) {
+			feat1[i].x = featPoint1[i].x;
+			feat1[i].y = featPoint1[i].y;
+
+			feat1.feat_match[i].x = featPoint2[i].x;
+			feat1.feat_match[i].y = featPoint2[i].y;
+		} else {
+			feat1.feat_match[i].x = -1;
+			feat1.feat_match[i].y = -1;
+		}
+	}
+	
+
 }
 
 // 合併兩張圖
@@ -324,7 +387,7 @@ int main(int argc, char const *argv[]) {
 
 	
 	// 開圖
-	ImgRaw img2("sc03.bmp");
+	ImgRaw img2("sc04.bmp");
 	ImgRaw img2_gray = img2.ConverGray();
 	// ORB
 	Feat feat2;
@@ -336,7 +399,7 @@ int main(int argc, char const *argv[]) {
 	
 	// 測試配對點
 	ImgRaw stackImg = imgMerge(img1, img2);
-	stackImg.bmp("merge.bmp");
+	//stackImg.bmp("merge.bmp");
 	featDrawLine("line.bmp", stackImg, feat);
 	
 	
@@ -381,7 +444,7 @@ void get_ORB_bin_test() {
 		// 描述
 		int x = feat[i].x;
 		int y = feat[i].y;
-		bin[i] = descriptor_ORB(img2, x, y, sing);
+		bin[i] = descriptor_ORB(img2, x, y, sing[i]);
 	}
 
 	// 測試
