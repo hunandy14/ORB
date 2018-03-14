@@ -160,6 +160,8 @@
     <ClCompile Include="ImgRaw\Raw2Img\Raw2img.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="opencvTest.cpp" />
+    <ClCompile Include="stitch\Blend.cpp" />
+    <ClCompile Include="stitch\stitch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h" />
@@ -171,6 +173,9 @@
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img_type.hpp" />
     <ClInclude Include="opencvTest.hpp" />
     <ClInclude Include="ORB_bit_pattern_31_.hpp" />
+    <ClInclude Include="stitch\Blend.hpp" />
+    <ClInclude Include="stitch\imagedata.hpp" />
+    <ClInclude Include="stitch\stitch.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="testCode.hpp" />

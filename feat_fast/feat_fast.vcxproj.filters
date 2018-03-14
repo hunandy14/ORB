@@ -34,6 +34,9 @@
     <Filter Include="來源檔案\Harris">
       <UniqueIdentifier>{06bfe745-b967-43a0-9400-547734ac00b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="stitch">
+      <UniqueIdentifier>{75fc5c2f-96ce-4726-9ba6-44a8cfa106ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -75,6 +78,12 @@
     <ClCompile Include="ImgRaw\Raw2Img\Raw2img.cpp">
       <Filter>來源檔案\Imgraw\Raw2Img</Filter>
     </ClCompile>
+    <ClCompile Include="stitch\Blend.cpp">
+      <Filter>stitch</Filter>
+    </ClCompile>
+    <ClCompile Include="stitch\stitch.cpp">
+      <Filter>stitch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h">
@@ -103,6 +112,15 @@
     </ClInclude>
     <ClInclude Include="ORB_bit_pattern_31_.hpp">
       <Filter>標頭檔</Filter>
+    </ClInclude>
+    <ClInclude Include="stitch\Blend.hpp">
+      <Filter>stitch</Filter>
+    </ClInclude>
+    <ClInclude Include="stitch\stitch.hpp">
+      <Filter>stitch</Filter>
+    </ClInclude>
+    <ClInclude Include="stitch\imagedata.hpp">
+      <Filter>stitch</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

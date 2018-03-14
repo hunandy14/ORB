@@ -6,12 +6,17 @@
 using namespace std;
 #include <opencv2\opencv.hpp> 
 using namespace cv;
+#include <Timer.hpp>
 //====================================================================================
 #include "Imgraw.hpp"
 #include "feat.hpp"
 #include "harris_coners.hpp"
 #include "ORB_bit_pattern_31_.hpp"
 #include "opencvTest.hpp"
+
+
+#include "stitch\imagedata.hpp"
+#include "stitch\Blend.hpp"
 //====================================================================================
 void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	ImgRaw temp = img;
@@ -241,7 +246,7 @@ int hamDist(const OrbDest& a, const OrbDest& b) {
 	return (a^b).count();
 }
 // 配對ORB
-void matchORB(Feat& feat1, const Feat& feat2) {
+void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	// todo 這裡還沒 delete
 	feat1.feat_match = new xy[feat1.size()];
 
@@ -314,8 +319,8 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 	// get Homography and RANSAC mask
 	vector<char> RANSAC_mask;
 	Mat Hog = findHomography(featPoint1, featPoint2, RANSAC, 3, RANSAC_mask, 2000, 0.995);
+
 	// 更新到 feat
-	
 	feat1.len=featPoint1.size();
 	for(size_t i = 0; i < featPoint1.size(); i++) {
 		if(RANSAC_mask[i]!=0) {
@@ -329,7 +334,33 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 			feat1.feat_match[i].y = -1;
 		}
 	}
+	/*
+	Point2f srcTri[3];
+	srcTri[0] = Point2f(feat1[0].x , feat1[0].y);
+	srcTri[1] = Point2f(feat1[1].x , feat1[1].y);
+	srcTri[2] = Point2f(feat1[2].x , feat1[2].y);
+
+	cout << "srcPt=" << srcTri[0] << endl;
+
+	Point2f dstTri[3];
+	dstTri[0] = Point2f(feat1.feat_match[0].x+752, feat1.feat_match[0].y);
+	dstTri[1] = Point2f(feat1.feat_match[1].x+752, feat1.feat_match[1].y);
+	dstTri[2] = Point2f(feat1.feat_match[2].x+752, feat1.feat_match[2].y);
+	cout << "dstPt=" << dstTri[0] << endl;
+
+	Mat warp_mat = getAffineTransform(srcTri, dstTri);*/
 	
+	
+	// 輸出到 hog
+	HomogMat.resize(Hog.cols*Hog.rows);
+	//cout << Hog << endl;
+
+	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
+		for(size_t i = 0; i < Hog.cols; i++, idx++) {
+			HomogMat[idx]=Hog.at<double>(j, i);
+			cout << HomogMat[idx] << ", ";
+		} cout << endl;
+	} cout << endl;
 
 }
 
@@ -358,20 +389,93 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 static void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
 	size_t featNum = feat.size();
 	ImgRaw outImg = stackImg;
-	for(int i = 0; i < featNum; i++) {
+	int i=0, idx=0;
+	for(i = 0; i < featNum; i++) {
 		if(feat.feat_match[i].x != -1) {
 			const int& x1 = feat.feat[i].x;
 			const int& y1 = feat.feat[i].y;
 			const int& x2 = feat.feat_match[i].x + (outImg.width *.5);
 			const int& y2 = feat.feat_match[i].y;
 			/*if(x1 < 100) {
-				cout << "size=" <<feat.size() << ", i=" << i << ", x1="<<x1<<endl;
-				throw ("X>100");
+			cout << "size=" <<feat.size() << ", i=" << i << ", x1="<<x1<<endl;
+			throw ("X>100");
 			}*/
 			Draw::drawLineRGB_p(outImg, y1, x1, y2, x2);
+			idx++;
 		}
 	}
+	cout << "idxxxxxx=" << i << ", " << idx << endl;
+
 	outImg.bmp(name, 24);
+}
+
+static void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RANfeat , size_t RANfeatNum) {
+	ImgRaw outImg = stackImg;
+	int i;
+	for(i = 1; i < RANfeatNum; i++) {
+		if(RANfeat[i]->fwd_match) {
+			/*
+			fpoint pt11 = fpoint(round(RANfeat[j]->rX()), round(RANfeat[j]->rY()));
+			fpoint pt22 = fpoint(round(RANfeat[j]->fwd_match->rX()), round(RANfeat[j]->fwd_match->rY()));
+			*/
+			fpoint pt11 = 
+				fpoint(round(RANfeat[i]->fwd_match->rX()), round(RANfeat[i]->fwd_match->rY()));
+			fpoint pt22 = 
+				fpoint(round(RANfeat[i]->rX()), round(RANfeat[i]->rY()));
+
+			const int& x1 = pt11.x;
+			const int& y1 = pt11.y;
+			const int& x2 = pt22.x + (outImg.width *.5);
+			const int& y2 = pt22.y;
+			Draw::drawLineRGB_p(outImg, y1, x1, y2, x2);
+		} else {
+			cerr << "RANSAC feat[i].fwd_match is nullptr" << endl;
+		}
+	}
+	cout << "idxxxxxx=" << i << endl;
+	outImg.bmp(name, 24);
+}
+
+
+static void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
+	size_t featNum = feat.size();
+	RANfeat = new Feature*[featNum]{};
+
+	int i=0, idx=0;
+	for(i = 0; i < featNum; i++) {
+		if(feat.feat_match[i].x != -1) {
+			const int& x1 = 
+				feat.feat_match[i].x;
+			const int& y1 = 
+				feat.feat_match[i].y;
+			const int& x2 = 
+				feat.feat[i].x;
+			const int& y2 = 
+				feat.feat[i].y;
+
+			Feature* fm = new Feature{};
+			fm->size = 1.0;
+			fm->x = x1;
+			fm->y = y1;
+
+			Feature* f = new Feature{};
+			f->size = 1.0;
+			f->x = x2;
+			f->y = y2;
+			f->fwd_match = fm;
+
+			// 輸入
+			RANfeat[idx]=f;
+			/*cout << RANfeat[idx]->rX() << ", ";
+			cout << RANfeat[idx]->rY() << "---->";
+			cout << (RANfeat[idx]->fwd_match)->rX() << ", ";
+			cout << (RANfeat[idx]->fwd_match)->rY() << endl;*/
+
+			idx++;
+		}
+	}
+	RANfeatNum=idx;
+	cout << "idxxxxxx=" << i << ", " << idx << endl;
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
@@ -379,20 +483,21 @@ int main(int argc, char const *argv[]) {
 #ifdef harrisTest
 	opencvHarris3();
 #else
-
+	string name1 = "sc02.bmp", name2= "sc03.bmp";
 	// 開圖
-	ImgRaw img1("sc02.bmp", "", 0);
+	ImgRaw img1(name1, "", 0);
 
 	ImgRaw img1_gray = img1.ConverGray();
 	img1_gray.nomal=0;
 
+	Timer t;
 	// ORB
 	Feat feat;
 	create_ORB(img1_gray, feat);
 
 	
 	// 開圖
-	ImgRaw img2("sc04.bmp", "", 0);
+	ImgRaw img2(name2, "", 0);
 	ImgRaw img2_gray = img2.ConverGray();
 	img2_gray.nomal=0;
 
@@ -402,14 +507,33 @@ int main(int argc, char const *argv[]) {
 
 	
 	// 尋找配對點
-	matchORB(feat, feat2);
+	vector<float> HomogMat;
+	matchORB(feat2, feat, HomogMat);
 	
+
+
 	// 測試配對點
 	ImgRaw stackImg = imgMerge(img1, img2);
 	//stackImg.bmp("merge.bmp");
-	featDrawLine("line.bmp", stackImg, feat);
+	//featDrawLine("line.bmp", stackImg, feat2);
 	
 	
+	// 縫合圖片
+	ImgRaw imgL(name1);
+	ImgRaw imgR(name2);
+
+	size_t RANSAC_num=0;
+	Feature** RANSAC_feat=nullptr;
+	//RANSAC_feat = new Feature*[RANSAC_num];
+	getNewfeat(feat2, RANSAC_feat, RANSAC_num);
+
+
+	//featDrawLine2("_matchImg_RANSACImg.bmp", stackImg, RANSAC_feat, RANSAC_num);
+
+	
+	blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
+
+	t.print("All time");
 #endif // harrisTest
 
 
@@ -462,4 +586,6 @@ void get_ORB_bin_test() {
 	}
 	int dis = hamDist(bin[0], bin[1]);
 	cout << "dis=" << dis << endl;
+
+
 }
