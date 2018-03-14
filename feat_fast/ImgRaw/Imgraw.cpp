@@ -10,6 +10,7 @@ Final: 2017/11/16
 #include <cmath>
 #include <algorithm>
 
+#include "imglib\imglib.hpp"
 #include "Raw2Img\Raw2Img.hpp"
 #include "Imgraw.hpp"
 
@@ -23,7 +24,7 @@ Final: 2017/11/16
 #define M_PI 3.14159265358979323846
 
 
-//----------------------------------------------------------------
+
 // 快速atan運算
 float fastAtan2f(float dy, float dx){
 	static const float atan2_p1 = 0.9997878412794807f*(float)(180/M_PI);
@@ -124,9 +125,8 @@ float fastAtanf_rad(float dy){
 }
 
 
-//----------------------------------------------------------------
 // ImgRaw 建構子
-ImgRaw::ImgRaw(string bmpname, string path, bool nomal){
+ImgRaw::ImgRaw(string bmpname, string path){
 	if(path!="") {
 		bmpname = path+"\\"+bmpname;
 		std::cout << "bmpname=" << bmpname << std::endl;
@@ -142,8 +142,36 @@ ImgRaw::ImgRaw(string bmpname, string path, bool nomal){
 	// 初始化(含正規化)
 	raw_img.resize(img.size());
 	for (size_t i = 0; i < img.size(); i++) {
-		raw_img[i] = (float)img[i];
-		if(nomal==1) raw_img[i] /= ImgRawPixMax;
+		if(nomal) {
+			raw_img[i] = (float)img[i] / ImgRawPixMax;
+		} else {
+			raw_img[i] = (float)img[i];
+		}
+	}
+}
+ImgRaw::ImgRaw(string bmpname, string path, bool nomal) {
+	this->nomal=nomal;
+
+	if(path!="") {
+		bmpname = path+"\\"+bmpname;
+		std::cout << "bmpname=" << bmpname << std::endl;
+	}
+	vector<unsigned char> img;
+	uint32_t width, height;
+	uint16_t bits;
+	// 讀取圖片
+	Raw2Img::read_bmp(img, bmpname, &width, &height, &bits);
+	this->width    = width;
+	this->height   = height;
+	this->bitCount = bits;
+	// 初始化(含正規化)
+	raw_img.resize(img.size());
+	for (size_t i = 0; i < img.size(); i++) {
+		if(nomal) {
+			raw_img[i] = (float)img[i] / ImgRawPixMax;
+		} else {
+			raw_img[i] = (float)img[i];
+		}
 	}
 }
 // 二維雙線性運算讀取
@@ -192,7 +220,28 @@ ImgRaw ImgRaw::rotateImg(size_t x, size_t y, float radius, float sita) {
 }
 
 
-//----------------------------------------------------------------
+void ImgRaw::zero(ImgRaw& tar, ImgRaw& sou, float z) {
+	Scaling::zero(tar, sou, sou.width, sou.height, z);
+	tar.width = (size_t)(sou.width*z);
+	tar.height = (size_t)(sou.height*z);
+}
+void ImgRaw::first(ImgRaw& tar, ImgRaw& sou, float z) {
+	Scaling::first(tar, sou, sou.width, sou.height, z);
+	tar.width = (size_t)(sou.width*z);
+	tar.height = (size_t)(sou.height*z);
+}
+void ImgRaw::cubic(ImgRaw& tar, ImgRaw& sou, float z) {
+	Scaling::cubic(tar, sou, sou.width, sou.height, z);
+	tar.width = (size_t)(sou.width*z);
+	tar.height = (size_t)(sou.height*z);
+}
+void ImgRaw::gauBlur(ImgRaw& tar, ImgRaw& sou, float p) {
+	Gaus::GauBlur(tar, sou, sou.width, sou.height, p);
+	tar.width = (size_t)(sou.width);
+	tar.height = (size_t)(sou.height);
+}
+
+
 // 寫 BMP 檔
 void ImgRaw::bmp(string name, uint32_t bits) {
 	if (bits == 0) { bits = this->bitCount; }
@@ -220,9 +269,12 @@ ImgRaw ImgRaw::ConverGray() const {
 }
 
 
-//----------------------------------------------------------------
+
 // 畫線
 void Draw::drawLine_p(ImgRaw& img, int y, int x, int y2, int x2, float val) {
+	if(img.nomal) {
+		val /= DrawPixNomal;
+	}
 	// 兩點之間的距離差
 	float dx = x2-x;
 	float dy = y2-y;
@@ -261,6 +313,9 @@ void Draw::drawLine_p(ImgRaw& img, int y, int x, int y2, int x2, float val) {
 	}
 }
 void Draw::drawLine_s(ImgRaw& img, int y, int x, float line_len, float sg, float val) {
+	if(img.nomal) {
+		val /= DrawPixNomal;
+	}
 	// 防呆
 	if (line_len < 0) {
 		return;
@@ -276,6 +331,9 @@ void Draw::drawLine_s(ImgRaw& img, int y, int x, float line_len, float sg, float
 	drawLine_p(img, y, x, y2, x2, val);
 }
 void Draw::draw_arrow(ImgRaw& img, int y, int x, float line_len, float sg, float val) {
+	if(img.nomal) {
+		val /= DrawPixNomal;
+	}
 	// 防呆
 	if (line_len < 0) {
 		return;
@@ -342,51 +400,71 @@ void Draw::drawLineRGB_p(ImgRaw& img, int y, int x, int y2, int x2,
 void Draw::drawLineRGB_p(ImgRaw& img, int y, int x, int y2, int x2) {
 	// 隨機顏色
 	auto random_num = [] {
-		return ((rand() / (RAND_MAX+1.0)) * (DrawPixNomal - 0) + 0);
+		return ((rand() / (RAND_MAX+1.0)) * (1 - 0) + 0);
 	};
-	float rVal = random_num();
-	float gVal = random_num();
-	float bVal = random_num();
+	float rVal, gVal, bVal;
+	if(img.nomal) {
+		rVal = random_num();
+		gVal = random_num();
+		bVal = random_num();
+	} else {
+		rVal = random_num()*DrawPixNomal;
+		gVal = random_num()*DrawPixNomal;
+		bVal = random_num()*DrawPixNomal;
+	}
 	drawLineRGB_p(img, y, x, y2, x2, rVal, gVal, bVal);
 }
 void Draw::drawLineRGB_s(ImgRaw& img, int y, int x, float line_len, float sg) {
-	float value = 200 /DrawPixNomal;
-	float endvalue = 255 /DrawPixNomal;
 	// 防呆
 	if (line_len < 0) {
 		return;
 	}
 	if (line_len==1) {
-		img[x*img.width + y] = value;
+		if(img.nomal) {
+			img[x*img.width + y] = 200 /DrawPixNomal;
+		} else {
+			img[x*img.width + y] = 200;
+		}
 		return;
 	}
 	// 算頭尾
 	int x2 = x + line_len*cos(sg * M_PI/180.0);
 	int y2 = y + line_len*sin(sg * M_PI/180.0);
 	// 畫線
-	drawLineRGB_p(img, y, x, y2, x2, 242/DrawPixNomal, 66/DrawPixNomal, 54/DrawPixNomal);
+	if(img.nomal) {
+		drawLineRGB_p(img, y, x, y2, x2, 242/DrawPixNomal, 66/DrawPixNomal, 54/DrawPixNomal);
+	} else {
+		drawLineRGB_p(img, y, x, y2, x2, 242, 66, 54);
+	}
 }
 void Draw::draw_arrowRGB(ImgRaw& img, int y, int x, float line_len, float sg) {
-	float value = 200 /DrawPixNomal;
-	float endvalue = 255 /DrawPixNomal;
+	float value = 200 /255.0;
+	float endvalue = 255 /255.0;
 	// 防呆
 	if (line_len < 0) {
 		return;
 	}
 	if (line_len==1) {
-		img[x*img.width + y] = value;
+		if(img.nomal) {
+			img[x*img.width + y] = 200 /DrawPixNomal;
+		} else {
+			img[x*img.width + y] = 200;
+		}
 		return;
 	}
 	// 算頭尾
 	int x2 = x + line_len*cos(sg * M_PI/180.0);
 	int y2 = y + line_len*sin(sg * M_PI/180.0);
+	
 	// 畫線
-	drawLineRGB_p(img, y, x, y2, x2, 242/DrawPixNomal, 66/DrawPixNomal, 54/DrawPixNomal);
+	if(img.nomal) {
+		drawLineRGB_p(img, y, x, y2, x2, 242/DrawPixNomal, 66/DrawPixNomal, 54/DrawPixNomal);
+	} else {
+		drawLineRGB_p(img, y, x, y2, x2, 242, 66, 54);
+	}
+
 	// 畫頭
 	size_t head_len = 6;
 	drawLineRGB_s(img, y2, x2, head_len, sg-150);
 	drawLineRGB_s(img, y2, x2, head_len, sg+150);
 }
-
-
-//----------------------------------------------------------------

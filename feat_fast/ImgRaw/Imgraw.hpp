@@ -15,8 +15,10 @@ float fastAtan2f_rad(float dy, float dx);
 float fastAtanf(float dy);
 float fastAtanf_rad(float dy);
 
-#define ImgRawPixMax 255.0
+
 //-----------------------------------------------------------------
+#define ImgRawPixMax 255.0
+
 class ImgRaw {
 private:
 	using types = float;
@@ -25,20 +27,24 @@ public:
 	ImgRaw() = default;
 	ImgRaw(vector<types> img, uint32_t width, uint32_t height, uint16_t bits) :
 		raw_img(img), width(width), height(height), bitCount(bits) {}
-	ImgRaw(vector<unsigned char> img, uint32_t width, uint32_t height, uint16_t bits, bool nomal=0) :
-		width(width), height(height), bitCount(bits), nomal(nomal)
+	ImgRaw(vector<unsigned char> img, uint32_t width, uint32_t height, uint16_t bits) :
+		width(width), height(height), bitCount(bits)
 	{
 		raw_img.resize(img.size());
-		for(unsigned i = 0; i < img.size(); ++i){
-			raw_img[i] = img[i];
-			if(nomal==1) raw_img[i] /= ImgRawPixMax;
+		for(unsigned i = 0; i < img.size(); ++i) {
+			if(nomal) {
+				raw_img[i] = img[i]/ImgRawPixMax;
+			} else {
+				raw_img[i] = img[i];
+			}
 		}
 	}
 	ImgRaw(uint32_t width, uint32_t height, uint16_t bits) :raw_img(width*height * (bits/8)), 
 		width(width), height(height), bitCount(bits){}
-	ImgRaw(string bmpname, string path="", bool nomal=0);
+	ImgRaw(string bmpname, string path="");
+	ImgRaw(string bmpname, string path, bool nomal);
 	// 複製函式
-	ImgRaw& operator=(const ImgRaw& other) {
+	/*ImgRaw& operator=(const ImgRaw& other) {
 		if (this != &other) {
 			raw_img = other.raw_img;
 			width = other.width;
@@ -46,19 +52,31 @@ public:
 			bitCount = other.bitCount;
 		}
 		return *this;
-	}
+	}*/
 	// 隱式轉換
 	operator vector<types>&() { return raw_img; }
 	operator const vector<types>&() const { return raw_img; }
 	operator vector<unsigned char>() {
-		const vector<unsigned char> img = static_cast<const ImgRaw&>(*this);
-		return const_cast<vector<unsigned char>&>(img);
+		vector<unsigned char> img(raw_img.size());
+		for(unsigned i = 0; i < raw_img.size(); ++i) {
+			if(nomal) {
+				img[i] = (unsigned char)(raw_img[i]*ImgRawPixMax);
+			} else {
+				img[i] = (unsigned char)(raw_img[i]);
+			}
+		}
+		return img;
+		//const vector<unsigned char> img = static_cast<const ImgRaw&>(*this);
+		//return const_cast<vector<unsigned char>&>(img);
 	}
 	operator const vector<unsigned char>() const {
 		vector<unsigned char> img(raw_img.size());
-		for(unsigned i = 0; i < raw_img.size(); ++i){
-			img[i] = (unsigned char)(raw_img[i]);
-			if(nomal==1) img[i] *= ImgRawPixMax;
+		for(unsigned i = 0; i < raw_img.size(); ++i) {
+			if(nomal) {
+				img[i] = (unsigned char)(raw_img[i]*ImgRawPixMax);
+			} else {
+				img[i] = (unsigned char)(raw_img[i]);
+			}
 		}
 		return img;
 	}
@@ -97,32 +115,16 @@ public:
 	// 取出旋轉後的圖片
 	ImgRaw rotateImg(size_t x, size_t y, float radius, float sita);
 public: // 放大縮小 (覺得累贅想拿掉)
-	static void zero(ImgRaw& tar, ImgRaw& sou, float z) {
-		Scaling::zero(tar, sou, sou.width, sou.height, z);
-		tar.width = (size_t)(sou.width*z);
-		tar.height = (size_t)(sou.height*z);
-	}
-	static void first(ImgRaw& tar, ImgRaw& sou, float z) {
-		Scaling::first(tar, sou, sou.width, sou.height, z);
-		tar.width = (size_t)(sou.width*z);
-		tar.height = (size_t)(sou.height*z);
-	}
-	static void cubic(ImgRaw& tar, ImgRaw& sou, float z) {
-		Scaling::cubic(tar, sou, sou.width, sou.height, z);
-		tar.width = (size_t)(sou.width*z);
-		tar.height = (size_t)(sou.height*z);
-	}
-	static void gauBlur(ImgRaw& tar, ImgRaw& sou, float p) {
-		Gaus::GauBlur(tar, sou, sou.width, sou.height, p);
-		tar.width = (size_t)(sou.width);
-		tar.height = (size_t)(sou.height);
-	}
+	static void zero(ImgRaw& tar, ImgRaw& sou, float z);
+	static void first(ImgRaw& tar, ImgRaw& sou, float z);
+	static void cubic(ImgRaw& tar, ImgRaw& sou, float z);
+	static void gauBlur(ImgRaw& tar, ImgRaw& sou, float p);
 public:
 	vector<types> raw_img;
 	uint32_t width;
 	uint32_t height;
 	uint16_t bitCount = 0;
-	bool nomal = 0;
+	bool nomal = 1;
 };
 // 大小是否相等
 inline bool operator!=(const ImgRaw& lhs, const ImgRaw& rhs) {
@@ -136,15 +138,15 @@ inline bool operator==(const ImgRaw& lhs, const ImgRaw& rhs) {
 
 
 
-
 //-----------------------------------------------------------------
 // 畫線
 #define DrawPixNomal 255.0
+
 class Draw {
 public:
-	static void drawLine_p(ImgRaw& img, int y, int x, int y2, int x2, float val=200/DrawPixNomal);
-	static void drawLine_s(ImgRaw& img, int y, int x, float line_len, float sg, float val=200/DrawPixNomal);
-	static void draw_arrow(ImgRaw& img, int y, int x, float line_len, float sg, float val=200/DrawPixNomal);
+	static void drawLine_p(ImgRaw& img, int y, int x, int y2, int x2, float val=200);
+	static void drawLine_s(ImgRaw& img, int y, int x, float line_len, float sg, float val=200);
+	static void draw_arrow(ImgRaw& img, int y, int x, float line_len, float sg, float val=200);
 
 	static void drawLineRGB_p(ImgRaw& img, int y, int x, int y2, int x2, 
 		float r, float, float);

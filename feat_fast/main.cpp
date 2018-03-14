@@ -151,6 +151,7 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 // 描述所有特徵點
 void desc_ORB(const ImgRaw& img, Feat& feat) {
 	ImgRaw img2;
+	img2.nomal=0;
 	Lowpass(img, img2, 3);
 	vector<OrbDest> bin(feat.size());
 	for(size_t i = 0; i < feat.size(); i++) {
@@ -191,7 +192,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	//cout << "idx=" << feat.len << endl;
 	vector<Point2f> corners;
 	goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
-	cout << "corners=" << corners.size() << endl;
+	cout << "OpenCV corners=" << corners.size() << endl;
 
 
 	// 回填 xy 位置
@@ -335,6 +336,7 @@ void matchORB(Feat& feat1, const Feat& feat2) {
 // 合併兩張圖
 ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	ImgRaw stackImg;
+	stackImg.nomal=0;
 	int Width  = img1.width+img2.width;
 	int Height = img1.height;
 	// 合併兩張圖
@@ -379,16 +381,21 @@ int main(int argc, char const *argv[]) {
 #else
 
 	// 開圖
-	ImgRaw img1("sc02.bmp");
+	ImgRaw img1("sc02.bmp", "", 0);
+
 	ImgRaw img1_gray = img1.ConverGray();
+	img1_gray.nomal=0;
+
 	// ORB
 	Feat feat;
 	create_ORB(img1_gray, feat);
 
 	
 	// 開圖
-	ImgRaw img2("sc04.bmp");
+	ImgRaw img2("sc04.bmp", "", 0);
 	ImgRaw img2_gray = img2.ConverGray();
+	img2_gray.nomal=0;
+
 	// ORB
 	Feat feat2;
 	create_ORB(img2_gray, feat2);
