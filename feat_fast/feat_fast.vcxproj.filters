@@ -13,20 +13,8 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="來源檔案\fast">
-      <UniqueIdentifier>{c88a54fe-8de7-4817-9554-b1769a520cc8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="來源檔案\Imgraw">
-      <UniqueIdentifier>{5306abe1-9297-4996-b380-81500c981c46}</UniqueIdentifier>
-    </Filter>
     <Filter Include="來源檔案\OpenCV">
       <UniqueIdentifier>{4b2277d6-fee9-402a-99d5-cf2b8332f8cc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="來源檔案\Imgraw\imglib">
-      <UniqueIdentifier>{49330b6b-dccb-4d2a-b9aa-670fe47aaffe}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="來源檔案\Imgraw\Raw2Img">
-      <UniqueIdentifier>{7f903276-29e5-40f6-a394-fcc534fb9768}</UniqueIdentifier>
     </Filter>
     <Filter Include="來源檔案\Feat">
       <UniqueIdentifier>{27c936f0-f52b-491e-ae67-14fc99485825}</UniqueIdentifier>
@@ -34,8 +22,26 @@
     <Filter Include="來源檔案\Harris">
       <UniqueIdentifier>{06bfe745-b967-43a0-9400-547734ac00b1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="stitch">
+    <Filter Include="外部函式庫">
+      <UniqueIdentifier>{fd6bd7a6-0358-4038-8623-fb718f530258}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="外部函式庫\fast">
+      <UniqueIdentifier>{c88a54fe-8de7-4817-9554-b1769a520cc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="自訂函式庫">
+      <UniqueIdentifier>{c173f442-e7a7-4da3-8c69-7b9722a251b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="自訂函式庫\stitch">
       <UniqueIdentifier>{75fc5c2f-96ce-4726-9ba6-44a8cfa106ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="自訂函式庫\Imgraw">
+      <UniqueIdentifier>{5306abe1-9297-4996-b380-81500c981c46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="自訂函式庫\Imgraw\imglib">
+      <UniqueIdentifier>{49330b6b-dccb-4d2a-b9aa-670fe47aaffe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="自訂函式庫\Imgraw\Raw2Img">
+      <UniqueIdentifier>{7f903276-29e5-40f6-a394-fcc534fb9768}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -43,31 +49,31 @@
       <Filter>來源檔案</Filter>
     </ClCompile>
     <ClCompile Include="fastlib\fast.c">
-      <Filter>來源檔案\fast</Filter>
+      <Filter>外部函式庫\fast</Filter>
     </ClCompile>
     <ClCompile Include="fastlib\fast_9.c">
-      <Filter>來源檔案\fast</Filter>
+      <Filter>外部函式庫\fast</Filter>
     </ClCompile>
     <ClCompile Include="fastlib\fast_10.c">
-      <Filter>來源檔案\fast</Filter>
+      <Filter>外部函式庫\fast</Filter>
     </ClCompile>
     <ClCompile Include="fastlib\fast_11.c">
-      <Filter>來源檔案\fast</Filter>
+      <Filter>外部函式庫\fast</Filter>
     </ClCompile>
     <ClCompile Include="fastlib\fast_12.c">
-      <Filter>來源檔案\fast</Filter>
+      <Filter>外部函式庫\fast</Filter>
     </ClCompile>
     <ClCompile Include="fastlib\nonmax.c">
-      <Filter>來源檔案\fast</Filter>
+      <Filter>外部函式庫\fast</Filter>
     </ClCompile>
     <ClCompile Include="ImgRaw\Imgraw.cpp">
-      <Filter>來源檔案\Imgraw</Filter>
+      <Filter>自訂函式庫\Imgraw</Filter>
     </ClCompile>
     <ClCompile Include="opencvTest.cpp">
       <Filter>來源檔案\OpenCV</Filter>
     </ClCompile>
     <ClCompile Include="ImgRaw\imglib\imglib.cpp">
-      <Filter>來源檔案\Imgraw\imglib</Filter>
+      <Filter>自訂函式庫\Imgraw\imglib</Filter>
     </ClCompile>
     <ClCompile Include="harris_coners\harris_coners.cpp">
       <Filter>來源檔案\Harris</Filter>
@@ -76,27 +82,24 @@
       <Filter>來源檔案\Feat</Filter>
     </ClCompile>
     <ClCompile Include="ImgRaw\Raw2Img\Raw2img.cpp">
-      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
+      <Filter>自訂函式庫\Imgraw\Raw2Img</Filter>
     </ClCompile>
     <ClCompile Include="stitch\Blend.cpp">
-      <Filter>stitch</Filter>
+      <Filter>自訂函式庫\stitch</Filter>
     </ClCompile>
     <ClCompile Include="stitch\stitch.cpp">
-      <Filter>stitch</Filter>
+      <Filter>自訂函式庫\stitch</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="fastlib\fast.h">
-      <Filter>標頭檔</Filter>
-    </ClInclude>
     <ClInclude Include="ImgRaw\Imgraw.hpp">
-      <Filter>來源檔案\Imgraw</Filter>
+      <Filter>自訂函式庫\Imgraw</Filter>
     </ClInclude>
     <ClInclude Include="opencvTest.hpp">
       <Filter>來源檔案\OpenCV</Filter>
     </ClInclude>
     <ClInclude Include="ImgRaw\imglib\imglib.hpp">
-      <Filter>來源檔案\Imgraw\imglib</Filter>
+      <Filter>自訂函式庫\Imgraw\imglib</Filter>
     </ClInclude>
     <ClInclude Include="harris_coners\harris_coners.hpp">
       <Filter>來源檔案\Harris</Filter>
@@ -105,22 +108,25 @@
       <Filter>來源檔案\Feat</Filter>
     </ClInclude>
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img.hpp">
-      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
+      <Filter>自訂函式庫\Imgraw\Raw2Img</Filter>
     </ClInclude>
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img_type.hpp">
-      <Filter>來源檔案\Imgraw\Raw2Img</Filter>
+      <Filter>自訂函式庫\Imgraw\Raw2Img</Filter>
     </ClInclude>
     <ClInclude Include="ORB_bit_pattern_31_.hpp">
       <Filter>標頭檔</Filter>
     </ClInclude>
     <ClInclude Include="stitch\Blend.hpp">
-      <Filter>stitch</Filter>
+      <Filter>自訂函式庫\stitch</Filter>
     </ClInclude>
     <ClInclude Include="stitch\stitch.hpp">
-      <Filter>stitch</Filter>
+      <Filter>自訂函式庫\stitch</Filter>
     </ClInclude>
     <ClInclude Include="stitch\imagedata.hpp">
-      <Filter>stitch</Filter>
+      <Filter>自訂函式庫\stitch</Filter>
+    </ClInclude>
+    <ClInclude Include="fastlib\fast.h">
+      <Filter>外部函式庫\fast</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
