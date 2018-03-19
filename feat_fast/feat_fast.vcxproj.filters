@@ -134,6 +134,9 @@
     <ClInclude Include="fastlib\fast.h">
       <Filter>外部函式庫\fast</Filter>
     </ClInclude>
+    <ClInclude Include="ORB.hpp">
+      <Filter>來源檔案\ORB</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="testCode.hpp">

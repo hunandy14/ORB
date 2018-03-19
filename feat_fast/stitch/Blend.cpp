@@ -1168,8 +1168,7 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 			cutImage[(j*cutImgsizeW+i)*3 +2] = maru_match[(j*cols+i)*3 +2];
 		}
 	}
-
-	//cutImage.bmp("_cutImg.bmp");
+	cutImage.bmp("_cutImg.bmp");
 }
 
 

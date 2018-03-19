@@ -173,6 +173,7 @@
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img.hpp" />
     <ClInclude Include="ImgRaw\Raw2Img\Raw2img_type.hpp" />
     <ClInclude Include="opencvTest.hpp" />
+    <ClInclude Include="ORB.hpp" />
     <ClInclude Include="ORB_bit_pattern_31_.hpp" />
     <ClInclude Include="stitch\Blend.hpp" />
     <ClInclude Include="stitch\imagedata.hpp" />

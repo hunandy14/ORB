@@ -23,6 +23,7 @@ using namespace cv;
 
 #include "stitch\imagedata.hpp"
 #include "stitch\Blend.hpp"
+#include "ORB.hpp"
 //====================================================================================
 void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	ImgRaw temp = img;
@@ -34,7 +35,7 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	temp.bmp(name);
 }
 // 灰度質心法
-void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
+static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	vector<double> feat_sita(feat.size());
 	for(int idx = 0; idx < feat.size();) {
 		double m01 = 0;
@@ -63,14 +64,14 @@ void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 }
 //====================================================================================
 // 獲得FAST特徵點
-void fast(const ImgRaw& img, Feat& feat){
+static void fast(const ImgRaw& img, Feat& feat){
 	vector<unsigned char> raw_data = img;
 	uchar* data = raw_data.data();
 	const int xsize = img.width, ysize = img.height, stride = xsize, threshold = 16;
 	feat.feat = fast9_detect_nonmax(data, xsize, ysize, xsize, threshold, &feat.len);
 }
 // 積分模糊
-void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
+static void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 	newimg = img;
 	if(n < 3) {
 		throw out_of_range("遮罩不該小於3");
@@ -160,7 +161,7 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 	return bin;
 }
 // 描述所有特徵點
-void desc_ORB(const ImgRaw& img, Feat& feat) {
+static void desc_ORB(const ImgRaw& img, Feat& feat) {
 	ImgRaw img2;
 	img2.nomal=0;
 	Lowpass(img, img2, 3);
@@ -248,7 +249,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 }
 
 // 漢明距離
-int hamDist(const OrbDest& a, const OrbDest& b) {
+static int hamDist(const OrbDest& a, const OrbDest& b) {
 	return (a^b).count();
 }
 // 配對ORB
@@ -370,6 +371,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 
 }
 
+
 // 合併兩張圖
 ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	ImgRaw stackImg;
@@ -393,7 +395,7 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	return stackImg;
 }
 // 畫線 (對本地資料結構)
-static void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
+ void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
 	size_t featNum = feat.size();
 	ImgRaw outImg = stackImg;
 	int i=0, idx=0;
@@ -416,7 +418,7 @@ static void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) 
 	outImg.bmp(name, 24);
 }
 // 畫線 (對blend資料結構)
-static void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RANfeat , size_t RANfeatNum) {
+ void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RANfeat , size_t RANfeatNum) {
 	ImgRaw outImg = stackImg;
 	int i;
 	for(i = 1; i < RANfeatNum; i++) {
@@ -443,7 +445,7 @@ static void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* co
 	outImg.bmp(name, 24);
 }
 // 轉換到 blen 的資料結構
-static void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
+ void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
 	size_t featNum = feat.size();
 	RANfeat = new Feature*[featNum]{};
 
