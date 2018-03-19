@@ -1,4 +1,10 @@
-﻿#include <iostream>
+﻿/*****************************************************************
+Name : 
+Date : 2018/03/01
+By   : CharlotteHonG
+Final: 2018/03/19
+*****************************************************************/
+#include <iostream>
 #include <vector>
 #include <opencv2\opencv.hpp> 
 #include "opencvTest.hpp"

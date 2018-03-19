@@ -43,6 +43,9 @@
     <Filter Include="自訂函式庫\Imgraw\Raw2Img">
       <UniqueIdentifier>{7f903276-29e5-40f6-a394-fcc534fb9768}</UniqueIdentifier>
     </Filter>
+    <Filter Include="來源檔案\ORB">
+      <UniqueIdentifier>{b6c17fae-f977-43cd-a62c-c7e3c4b2ce57}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -89,6 +92,9 @@
     </ClCompile>
     <ClCompile Include="stitch\stitch.cpp">
       <Filter>自訂函式庫\stitch</Filter>
+    </ClCompile>
+    <ClCompile Include="ORB.cpp">
+      <Filter>來源檔案\ORB</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

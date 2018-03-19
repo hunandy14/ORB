@@ -160,6 +160,7 @@
     <ClCompile Include="ImgRaw\Raw2Img\Raw2img.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="opencvTest.cpp" />
+    <ClCompile Include="ORB.cpp" />
     <ClCompile Include="stitch\Blend.cpp" />
     <ClCompile Include="stitch\stitch.cpp" />
   </ItemGroup>
