@@ -5,7 +5,6 @@ By   : CharlotteHonG
 Final: 2017/06/14
 *****************************************************************/
 #pragma once
-#include <iostream>
 #include <fstream>
 #include "Raw2img_type.hpp"
 //----------------------------------------------------------------

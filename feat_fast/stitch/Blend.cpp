@@ -742,6 +742,7 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 
 /*********************** Functions prototyped in Blend.h **********************/
 /* 混合的前置運算. */
+// 對齊取得第二張圖偏移量
 static void alignMatch(
 	const Raw &img1, const Raw &img2,
 	Feature const* const* good_match, int gm_num,
@@ -792,7 +793,6 @@ static void alignMatch(
 	int avg_dx = (float)cal_dx / (float)(gm_num-1);
 	int avg_dy = (float)cal_dy / (float)(gm_num-1);
 
-
 	// 修正座標(猜測是4捨5入哪裡怎樣沒寫好才變成這樣).
 	if(avg_dx % 2 == 0){
 		if(avg_dx + 1 <= img1.getCol() && avg_dx + 1 <= img2.getCol()){
@@ -819,9 +819,6 @@ static void alignMatch(
 	// 輸出座標.
 	x.emplace_back(avg_dx);
 	y.emplace_back(avg_dy);
-
-
-
 }
 // 輸入 仿射矩陣 獲得焦距
 static void focalsFromHomography(const vector<float> &Hmg, float &f0, float &f1, bool &f0_ok, bool &f1_ok)
@@ -967,6 +964,7 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 	//------------------------------------------------------------------------
 	// 獲取共同焦距ft
 	float ft = getFocal(HomogMat, img1.size(), img2.size());
+	cout << "ft = " << ft << endl;
 
 	// Warping 圓柱投影.
 	vector<fpoint> upedge;
@@ -988,12 +986,13 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 
 	//-------------------------------------------------------------------------
 	// Blend 多頻段混合.
-	for(int num = 0; num < warpingImg.size() - 1; num++) {
+		for(int num = 0; num < warpingImg.size() - 1; num++) {
 		if(Align_dy[num] > warpingImg[num].getRow()) { // 假如 y 的偏移量大於圖片高
 			int dyy = -(warpingImg[num].getRow() - abs(warpingImg[num].getRow() - Align_dy[num]));
 			cout << "dy--->dyy = " << Align_dy[num] << ", " << dyy << endl;
 			multiBandBlend(warpingImg[num], warpingImg[num + 1], Align_dx[num], dyy);
 		} else { // 通常情況
+			cout << "dy-> = " << Align_dx[num] << ", " << Align_dy[num] << endl;
 			multiBandBlend(warpingImg[num], warpingImg[num + 1], Align_dx[num], Align_dy[num]);
 		}
 	}

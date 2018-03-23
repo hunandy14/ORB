@@ -35,7 +35,8 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	temp.bmp(name);
 }
 // 灰度質心法
-static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
+static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius, double groups) {
+	//groups = 360.0/groups;
 	vector<double> feat_sita(feat.size());
 	for(int idx = 0; idx < feat.size();) {
 		double m01 = 0;
@@ -57,8 +58,10 @@ static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 				}
 			}
 		}
-
-		feat_sita[idx++] = fastAtan2(m01, m10);
+		double s = fastAtan2(m01, m10);
+		//cout << s << "==> \t" << s/30.0 << "  ==>\t  " << round(s/30.0) << endl;
+		//s=round(s/30.0);
+		feat_sita[idx++] = s;
 	}
 	feat.sita = std::move(feat_sita);
 }
@@ -143,18 +146,18 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 
 		// 描述點對
 		// todo 乾 這裡好像有錯
-		/*const int singIdx = sing/30.0;
-		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
-		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
-		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
-		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
-
-		// 不旋轉
-		const int singIdx = 0;
+		const int singIdx = sing/30.0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
+
+		// 不旋轉
+		/*const int singIdx = 0;
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
 
 		bin[k] = Compare(img, x1, y1, x2, y2);
 	}
@@ -187,7 +190,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	Mat mask(Mat::zeros(Size(img.width, img.height),CV_8U));
 	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
 	// 把 feat 的 xy 轉到 mask
-	int edg=30;
+	int edg=0;
 	for(size_t i = 0; i < feat.len; i++) {
 		//idx = (feat.feat->y)*image.rows + (feat.feat->x);
 		int x=feat[i].x;
@@ -201,49 +204,39 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		}
 	}
 
-	//cout << "idx=" << feat.len << endl;
+	cout << "FAST corner 數量 = " << feat.len << endl;
 	vector<Point2f> corners;
-	goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
-	cout << "OpenCV corners=" << corners.size() << endl;
-
+	goodFeaturesToTrack(gray, corners, 2000, 0.01, 10, mask, 3, true, 0.04);
+	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
+	cout << "Harris corner 數量 = " << corners.size() << endl;
 
 	// 回填 xy 位置
 	int newLen=0;
 	for(int i = 0; i < corners.size(); i++) {
 		int x=corners[i].x;
 		int y=corners[i].y;
-
 		if(x<edg) {
 			throw("x<edg");
 		}
 		if(i==1) {
 			cout << "x=" << x << endl;
 		}
-
 		feat[i].x = x;
 		feat[i].y = y;
 		newLen++;
 	}
 	feat.len=corners.size();
 
-	/*
-	RNG rng(12345);
-	image = imread("sc02.bmp");
-	for(size_t i = 0; i < corners.size(); i++){
-	Scalar color;
-	color = Scalar(rng.uniform(0,255), rng.uniform(0, 255), rng.uniform(0, 255));
-	color = Scalar(0, 0, 255);
-	circle(image, corners[i], 5, color, 1);
-	}
-	imshow("goodFeaturesToTrack", image);
-	waitKey();
-	*/
-
-
-
-
 	// 灰度重心法
-	GrayCenterOfMass(img, feat, 3);
+	GrayCenterOfMass(img, feat, 3, 12.0);
+
+	ImgRaw temp = img;
+	for(size_t i = 0; i < feat.size(); i++) {
+		Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
+	}
+	static int num=0;
+	temp.bmp("arrow"+to_string(num++)+".bmp");
+
 	// 描述特徵
 	desc_ORB(img, feat);
 }
@@ -271,9 +264,9 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 			}
 		}
 		// 加入匹配點
-		//cout << "distCurr=" << distCurr << endl;
-		if(dist > 128 or
-			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000 )
+		//cout << "dist=" << dist << endl;
+		if(dist > 24 /*or
+			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
 		{
 			feat1.feat_match[j].x = -1;
 			feat1.feat_match[j].y = -1;
@@ -281,11 +274,10 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 			feat1.feat_match[j].x = feat2.feat[matchIdx].x;
 			feat1.feat_match[j].y = feat2.feat[matchIdx].y;
 			feat1.distance[j] = dist;
+			// 計算最大最小距離
+			if(dist!=0 && dist < min_dist) min_dist = dist;
+			if(dist > max_dist) max_dist = dist;
 		}
-
-		// 計算最大最小距離
-		if(dist < min_dist) min_dist = dist;
-		if(dist > max_dist) max_dist = dist;
 	}
 
 	//-- Quick calculation of max and min distances between keypoints
@@ -341,34 +333,9 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 			feat1.feat_match[i].y = -1;
 		}
 	}
-	/*
-	Point2f srcTri[3];
-	srcTri[0] = Point2f(feat1[0].x , feat1[0].y);
-	srcTri[1] = Point2f(feat1[1].x , feat1[1].y);
-	srcTri[2] = Point2f(feat1[2].x , feat1[2].y);
-
-	cout << "srcPt=" << srcTri[0] << endl;
-
-	Point2f dstTri[3];
-	dstTri[0] = Point2f(feat1.feat_match[0].x+752, feat1.feat_match[0].y);
-	dstTri[1] = Point2f(feat1.feat_match[1].x+752, feat1.feat_match[1].y);
-	dstTri[2] = Point2f(feat1.feat_match[2].x+752, feat1.feat_match[2].y);
-	cout << "dstPt=" << dstTri[0] << endl;
-
-	Mat warp_mat = getAffineTransform(srcTri, dstTri);*/
-
-
 	// 輸出到 hog
 	HomogMat.resize(Hog.cols*Hog.rows);
-	//cout << Hog << endl;
-
-	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
-		for(size_t i = 0; i < Hog.cols; i++, idx++) {
-			HomogMat[idx]=Hog.at<double>(j, i);
-			cout << HomogMat[idx] << ", ";
-		} cout << endl;
-	} cout << endl;
-
+	cout << "Hog=\n" << Hog << endl;
 }
 
 
@@ -401,10 +368,10 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	int i=0, idx=0;
 	for(i = 0; i < featNum; i++) {
 		if(feat.feat_match[i].x != -1) {
-			const int& x1 = feat.feat[i].x;
-			const int& y1 = feat.feat[i].y;
-			const int& x2 = feat.feat_match[i].x + (outImg.width *.5);
-			const int& y2 = feat.feat_match[i].y;
+			const int& x1 = feat.feat_match[i].x + (outImg.width *.5);
+			const int& y1 = feat.feat_match[i].y;
+			const int& x2 = feat.feat[i].x;
+			const int& y2 = feat.feat[i].y;
 			/*if(x1 < 100) {
 			cout << "size=" <<feat.size() << ", i=" << i << ", x1="<<x1<<endl;
 			throw ("X>100");
