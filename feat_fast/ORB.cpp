@@ -35,8 +35,7 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	temp.bmp(name);
 }
 // 灰度質心法
-static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius, double groups) {
-	//groups = 360.0/groups;
+static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	vector<double> feat_sita(feat.size());
 	for(int idx = 0; idx < feat.size();) {
 		double m01 = 0;
@@ -146,18 +145,18 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 
 		// 描述點對
 		// todo 乾 這裡好像有錯
-		const int singIdx = sing/30.0;
-		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
-		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
-		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
-		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
-
-		// 不旋轉
-		/*const int singIdx = 0;
+		/*const int singIdx = sing/30.0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
+
+		// 不旋轉
+		const int singIdx = 0;
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
 
 		bin[k] = Compare(img, x1, y1, x2, y2);
 	}
@@ -227,8 +226,24 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	}
 	feat.len=corners.size();
 
+	/*
+	RNG rng(12345);
+	image = imread("sc02.bmp");
+	for(size_t i = 0; i < corners.size(); i++){
+	Scalar color;
+	color = Scalar(rng.uniform(0,255), rng.uniform(0, 255), rng.uniform(0, 255));
+	color = Scalar(0, 0, 255);
+	circle(image, corners[i], 5, color, 1);
+	}
+	imshow("goodFeaturesToTrack", image);
+	waitKey();
+	*/
+
+
+
+
 	// 灰度重心法
-	GrayCenterOfMass(img, feat, 3, 12.0);
+	GrayCenterOfMass(img, feat, 3);
 
 	ImgRaw temp = img;
 	for(size_t i = 0; i < feat.size(); i++) {
@@ -266,7 +281,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 		// 加入匹配點
 		//cout << "dist=" << dist << endl;
 		if(dist > 24 /*or
-			abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
+					 abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
 		{
 			feat1.feat_match[j].x = -1;
 			feat1.feat_match[j].y = -1;
@@ -335,7 +350,14 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	}
 	// 輸出到 hog
 	HomogMat.resize(Hog.cols*Hog.rows);
-	cout << "Hog=\n" << Hog << endl;
+	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
+		for(size_t i = 0; i < Hog.cols; i++, idx++) {
+			HomogMat[idx]=Hog.at<double>(j, i);
+			cout << HomogMat[idx] << ", ";
+		} cout << endl;
+	} cout << endl;
+
+	//cout << "Hog=\n" << Hog << endl;
 }
 
 

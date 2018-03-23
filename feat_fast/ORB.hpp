@@ -7,7 +7,7 @@ Final: 2018/03/19
 #pragma once
 
 
-// FAST+Harris 檢測興趣點
+// 漢明距離
 void create_ORB(const ImgRaw & img, Feat & feat);
 // 配對ORB
 void matchORB(Feat & feat1, const Feat & feat2, vector<float>& HomogMat);

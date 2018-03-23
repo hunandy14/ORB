@@ -28,10 +28,10 @@ using namespace cv;
 int main(int argc, char const *argv[]) {
 
 
-//#define harrisTest
+	//#define harrisTest
 #ifdef harrisTest
 	//opencvHarris3();
-	
+
 	ORB_bit::getAllTransData();
 #else
 	//string name1 = "beaver01.bmp", name2= "beaver03.bmp";
@@ -70,7 +70,7 @@ int main(int argc, char const *argv[]) {
 	ImgRaw stackImg = imgMerge(img1, img2);
 	//stackImg.bmp("merge.bmp");
 	featDrawLine("line.bmp", stackImg, feat2);
-	
+
 	// 縫合圖片
 	ImgRaw imgL(name1);
 	ImgRaw imgR(name2);
@@ -84,7 +84,7 @@ int main(int argc, char const *argv[]) {
 
 	// 縫合
 	t.start();
-	//blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
+	blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
 	t.print(" blend ORB");
 
 	//t.print("All time");
