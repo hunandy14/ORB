@@ -79,6 +79,9 @@ static void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 		throw out_of_range("遮罩不該小於3");
 	}
 	int dn = (n - 1) / 2;
+
+	int i, j, dy;
+#pragma omp parallel for private(i, j, dy)
 	for(int j = dn; j < img.height - dn; j++) {
 		for(int i = dn; i < img.width - dn; i++) {
 			int total = 0;
@@ -99,32 +102,25 @@ static void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 }
 // 取平均
 static double average(const ImgRaw& img, int x, int y) {
-	double avg = 0.0;
+	int sum = 0;
 	const int r = 2;
-	for(int j = -r; j <= r; j++) {
-		for(int i = -r; i <= r; i++) {
+
+	int i, j, thisx, thisy, posi;
+#pragma omp parallel for private(i, j, posi), reduction( +:sum)
+	for(j = -r; j <= r; j++) {
+		for(i = -r; i <= r; i++) {
 			int thisx = x + i;
 			int thisy = y + j;
 			// 處理負號
-			if(thisx < 0.0 ) {
-				thisx = 0;
-			}
-			if(thisx >= img.width) {
-				thisx = img.width-1;
-			}
-			if(thisy < 0.0) {
-				thisy = 0;
-			}
-			if(thisy >= img.height) {
-				thisy = img.height-1;
+			if(thisx < 0.0 or thisx >= img.width or thisy < 0.0 or thisy >= img.height) {
+				throw out_of_range("out");
 			}
 			// 累加
 			int posi = thisy * img.width + thisx;
-			avg += img[posi];
+			sum += img[posi];
 		}
 	}
-	avg /= 25.0;
-	return avg;
+	return sum/25.0;
 }
 // 描述特徵點內的一個bit
 static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
@@ -189,7 +185,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	Mat mask(Mat::zeros(Size(img.width, img.height),CV_8U));
 	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
 	// 把 feat 的 xy 轉到 mask
-	int edg=0;
+	int edg=3+15;
 	for(size_t i = 0; i < feat.len; i++) {
 		//idx = (feat.feat->y)*image.rows + (feat.feat->x);
 		int x=feat[i].x;
@@ -198,7 +194,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		//cout << "string=" << pt << endl;
 
 		// 過濾邊緣位置
-		if(x>=(3+edg) and x<=img.width-(3+edg) && y>=(3+edg) and y<=img.height-(3+edg)) {
+		if(x>=(edg) and x<=img.width-(edg) && y>=(edg) and y<=img.height-(edg)) {
 			mask.at<uchar>(pt) = 255;
 		}
 	}
@@ -224,11 +220,11 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		feat[i].y = y;
 		newLen++;
 	}
-	feat.len=corners.size();
+	feat.len = corners.size();
 
 	/*
 	RNG rng(12345);
-	image = imread("sc02.bmp");
+	image = imread("sc01.bmp");
 	for(size_t i = 0; i < corners.size(); i++){
 	Scalar color;
 	color = Scalar(rng.uniform(0,255), rng.uniform(0, 255), rng.uniform(0, 255));
@@ -236,21 +232,19 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	circle(image, corners[i], 5, color, 1);
 	}
 	imshow("goodFeaturesToTrack", image);
-	waitKey();
-	*/
-
-
-
+	waitKey();*/
+	
 
 	// 灰度重心法
 	GrayCenterOfMass(img, feat, 3);
 
+	/*
 	ImgRaw temp = img;
 	for(size_t i = 0; i < feat.size(); i++) {
 		Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
 	}
 	static int num=0;
-	temp.bmp("arrow"+to_string(num++)+".bmp");
+	temp.bmp("arrow"+to_string(num++)+".bmp");*/
 
 	// 描述特徵
 	desc_ORB(img, feat);
@@ -267,6 +261,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 
 	int max_dist = 0; int min_dist = 100;
 	feat1.distance.resize(feat1.size());
+
 	for(size_t j = 0; j < feat1.size(); j++) {
 		int dist = numeric_limits<int>::max();
 		int matchIdx = -1;
@@ -300,7 +295,6 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	printf("-- Min dist : %d \n", min_dist);
 
 	//-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
-
 	feat1.distance.resize(feat1.size());
 	for(int i = 0; i < feat1.size(); i++){
 		if(feat1.distance[i] > 5 * min_dist) {

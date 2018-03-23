@@ -26,6 +26,7 @@ using namespace cv;
 
 //====================================================================================
 int main(int argc, char const *argv[]) {
+	Timer t0;
 
 
 	//#define harrisTest
@@ -35,9 +36,10 @@ int main(int argc, char const *argv[]) {
 	ORB_bit::getAllTransData();
 #else
 	//string name1 = "beaver01.bmp", name2= "beaver03.bmp";
-	//string name1 = "sc02.bmp", name2= "sc03.bmp";
+	string name1 = "sc02.bmp", name2= "sc03.bmp";
+	//string name1 = "sc01.bmp", name2= "sc02.bmp";
 	//string name1 = "ball_01.bmp", name2= "ball_02.bmp";
-	string name1 = "b01.bmp", name2= "b02.bmp";
+	//string name1 = "b01.bmp", name2= "b02.bmp";
 	// 開圖
 	ImgRaw img1(name1, "", 0);
 
@@ -63,7 +65,9 @@ int main(int argc, char const *argv[]) {
 	// 尋找配對點
 	vector<float> HomogMat;
 	t.start();
+	
 	matchORB(feat2, feat, HomogMat);
+
 	t.print(" Match ORB FEAT");
 
 	// 測試配對點
@@ -87,9 +91,7 @@ int main(int argc, char const *argv[]) {
 	blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
 	t.print(" blend ORB");
 
-	//t.print("All time");
-
-
+	t0.print("All time");
 #endif // harrisTest
 	return 0;
 }
