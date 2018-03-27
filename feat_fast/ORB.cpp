@@ -102,25 +102,32 @@ static void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 }
 // 取平均
 static double average(const ImgRaw& img, int x, int y) {
-	int sum = 0;
+	double avg = 0.0;
 	const int r = 2;
-
-	int i, j, thisx, thisy, posi;
-#pragma omp parallel for private(i, j, posi), reduction( +:sum)
-	for(j = -r; j <= r; j++) {
-		for(i = -r; i <= r; i++) {
+	for(int j = -r; j <= r; j++) {
+		for(int i = -r; i <= r; i++) {
 			int thisx = x + i;
 			int thisy = y + j;
 			// 處理負號
-			if(thisx < 0.0 or thisx >= img.width or thisy < 0.0 or thisy >= img.height) {
-				throw out_of_range("out");
+			if(thisx < 0.0 ) {
+				thisx = 0;
+			}
+			if(thisx >= img.width) {
+				thisx = img.width-1;
+			}
+			if(thisy < 0.0) {
+				thisy = 0;
+			}
+			if(thisy >= img.height) {
+				thisy = img.height-1;
 			}
 			// 累加
 			int posi = thisy * img.width + thisx;
-			sum += img[posi];
+			avg += img[posi];
 		}
 	}
-	return sum/25.0;
+	avg /= 25.0;
+	return avg;
 }
 // 描述特徵點內的一個bit
 static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
@@ -185,7 +192,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	Mat mask(Mat::zeros(Size(img.width, img.height),CV_8U));
 	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
 	// 把 feat 的 xy 轉到 mask
-	int edg=3+15;
+	int edg=3+20;
 	for(size_t i = 0; i < feat.len; i++) {
 		//idx = (feat.feat->y)*image.rows + (feat.feat->x);
 		int x=feat[i].x;
@@ -220,11 +227,11 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		feat[i].y = y;
 		newLen++;
 	}
-	feat.len = corners.size();
+	feat.len=corners.size();
 
 	/*
 	RNG rng(12345);
-	image = imread("sc01.bmp");
+	image = imread("sc02.bmp");
 	for(size_t i = 0; i < corners.size(); i++){
 	Scalar color;
 	color = Scalar(rng.uniform(0,255), rng.uniform(0, 255), rng.uniform(0, 255));
@@ -232,19 +239,22 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	circle(image, corners[i], 5, color, 1);
 	}
 	imshow("goodFeaturesToTrack", image);
-	waitKey();*/
-	
+	waitKey();
+	*/
+
+
+
 
 	// 灰度重心法
 	GrayCenterOfMass(img, feat, 3);
 
-	/*
 	ImgRaw temp = img;
 	for(size_t i = 0; i < feat.size(); i++) {
-		Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
+		//Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
 	}
 	static int num=0;
-	temp.bmp("arrow"+to_string(num++)+".bmp");*/
+	//temp.bmp("arrow"+to_string(num++)+".bmp");
+
 
 	// 描述特徵
 	desc_ORB(img, feat);
@@ -261,7 +271,6 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 
 	int max_dist = 0; int min_dist = 100;
 	feat1.distance.resize(feat1.size());
-
 	for(size_t j = 0; j < feat1.size(); j++) {
 		int dist = numeric_limits<int>::max();
 		int matchIdx = -1;
@@ -342,6 +351,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 			feat1.feat_match[i].y = -1;
 		}
 	}
+
 	// 輸出到 hog
 	HomogMat.resize(Hog.cols*Hog.rows);
 	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
@@ -378,7 +388,7 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	return stackImg;
 }
 // 畫線 (對本地資料結構)
- void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
+void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
 	size_t featNum = feat.size();
 	ImgRaw outImg = stackImg;
 	int i=0, idx=0;
@@ -401,7 +411,7 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	outImg.bmp(name, 24);
 }
 // 畫線 (對blend資料結構)
- void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RANfeat , size_t RANfeatNum) {
+void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RANfeat , size_t RANfeatNum) {
 	ImgRaw outImg = stackImg;
 	int i;
 	for(i = 1; i < RANfeatNum; i++) {
@@ -428,7 +438,7 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	outImg.bmp(name, 24);
 }
 // 轉換到 blen 的資料結構
- void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
+void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
 	size_t featNum = feat.size();
 	RANfeat = new Feature*[featNum]{};
 
