@@ -33,28 +33,26 @@ int main(int argc, char const *argv[]) {
 	//string name1 = "b01.bmp", name2= "b02.bmp";
 	// 開圖
 	ImgRaw img1(name1, "", 0);
-
 	ImgRaw img1_gray = img1.ConverGray();
 	img1_gray.nomal=0;
-
-	Timer t;
-	// ORB
-	Feat feat;
-	create_ORB(img1_gray, feat);
-
 	// 開圖
 	ImgRaw img2(name2, "", 0);
 	ImgRaw img2_gray = img2.ConverGray();
 	img2_gray.nomal=0;
 
-	// ORB
-	Feat feat2;
-	create_ORB(img2_gray, feat2);
 
+	Timer total, t1;
+	// ORB
+	t1.start();
+	Feat feat, feat2;
+	create_ORB(img1_gray, feat);
+	create_ORB(img2_gray, feat2);
+	t1.print(" >>>>>>>>>>>>>>>>>>create_ORB"); // 0.274
 	// 尋找配對點
 	vector<float> HomogMat;
+	t1.start();
 	matchORB(feat2, feat, HomogMat);
-
+	t1.print(" >>>>>>>>>>>>>>>>>>matchORB"); // 0.006
 	// 測試配對點
 	ImgRaw stackImg = imgMerge(img1, img2);
 	//stackImg.bmp("merge.bmp");
@@ -69,8 +67,12 @@ int main(int argc, char const *argv[]) {
 	//RANSAC_feat = new Feature*[RANSAC_num];
 	getNewfeat(feat2, RANSAC_feat, RANSAC_num);
 	//featDrawLine2("_matchImg_RANSACImg.bmp", stackImg, RANSAC_feat, RANSAC_num);
+	t1.start();
+
 	blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
-	t.print("All time");
+	t1.print(" >>>>>>>>>>>>>>>>>>blen2img"); // 0.4
+
+	total.print("total time"); //0.8
 
 
 #endif // harrisTest

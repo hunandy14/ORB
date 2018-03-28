@@ -43,6 +43,81 @@ struct X_S
 	int l;
 };
 
+struct basic_ImgData {
+	std::vector<unsigned char> raw_img;
+	uint32_t width;
+	uint32_t height;
+	uint16_t bits;
+};
+
+// 快速 線性插值
+inline static void fast_Bilinear_rgb(float* p, 
+	const Blend_Image& src, double y, double x)
+{
+	// 起點
+	int _x = (int)x;
+	int _y = (int)y;
+	// 左邊比值
+	double l_x = x - (double)_x;
+	double r_x = 1.f - l_x;
+	double t_y = y - (double)_y;
+	double b_y = 1.f - t_y;
+	int srcW = src.width;
+	int srcH = src.height;
+
+	// 計算RGB
+	double R , G, B;
+	int x2 = (_x+1) > src.width -1? src.width -1: _x+1;
+	int y2 = (_y+1) > src.height-1? src.height-1: _y+1;
+	R  = (double)src.RGB[(_y * srcW + _x) *3 + 0] * (r_x * b_y);
+	G  = (double)src.RGB[(_y * srcW + _x) *3 + 1] * (r_x * b_y);
+	B  = (double)src.RGB[(_y * srcW + _x) *3 + 2] * (r_x * b_y);
+	R += (double)src.RGB[(_y * srcW + x2) *3 + 0] * (l_x * b_y);
+	G += (double)src.RGB[(_y * srcW + x2) *3 + 1] * (l_x * b_y);
+	B += (double)src.RGB[(_y * srcW + x2) *3 + 2] * (l_x * b_y);
+	R += (double)src.RGB[(y2 * srcW + _x) *3 + 0] * (r_x * t_y);
+	G += (double)src.RGB[(y2 * srcW + _x) *3 + 1] * (r_x * t_y);
+	B += (double)src.RGB[(y2 * srcW + _x) *3 + 2] * (r_x * t_y);
+	R += (double)src.RGB[(y2 * srcW + x2) *3 + 0] * (l_x * t_y);
+	G += (double)src.RGB[(y2 * srcW + x2) *3 + 1] * (l_x * t_y);
+	B += (double)src.RGB[(y2 * srcW + x2) *3 + 2] * (l_x * t_y);
+
+	*(p+0) = (unsigned char) R;
+	*(p+1) = (unsigned char) G;
+	*(p+2) = (unsigned char) B;
+}
+// 縮放函式
+void WarpScale(const Blend_Image &src, Blend_Image &dst, double Ratio){
+	int newH = (int)(src.height * Ratio);
+	int newW = (int)(src.width  * Ratio);
+	// 初始化 dst
+	dst.RGB = new float[newW * newW * 3];
+	dst.width  = newW;
+	dst.height = newW;
+	// todo 尼瑪這份代碼有錯，不知道坑在哪要改w*w這樣才會正常.
+
+	// 跑新圖座標
+	volatile double srcY, srcX;
+	int i, j;
+//#pragma omp parallel for private(i, j)
+	for (j = 0; j < newH; ++j) {
+		for (i = 0; i < newW; ++i) {
+			// 調整對齊
+			if (Ratio < 1) {
+				srcY = ((j+0.5f)/Ratio) - 0.5;
+				srcX = ((i+0.5f)/Ratio) - 0.5;
+			} else {
+				srcY = j*(src.height-1.f) / (newH-1.f);
+				srcX = i*(src.width -1.f) / (newW-1.f);
+			}
+			// 獲取插補值
+			float* p = &dst.RGB[(j*newW + i) *3];
+			fast_Bilinear_rgb(p, src, srcY, srcX);
+		}
+	}
+}
+
+
 /************************* Local Function Prototypes *************************/
 
 /****************************** Local Function *******************************/
@@ -196,6 +271,8 @@ static float BiCubicPoly(float x) {
 	return 0.f;
 }
 // 仿射轉換+線性補值.
+
+// todo 放大縮小
 static Blend_Image Bicubic(const Blend_Image& src, float TransMat[3][3])
 {
 	Blend_Image dst;
@@ -365,6 +442,12 @@ static Blend_Image Bicubic(const Blend_Image& src, float TransMat[3][3])
 	}
 	return dst;
 }
+static Blend_Image Bicubic2(const Blend_Image& src, float TransMat[3][3]) {
+	Blend_Image img;
+	//cout << TransMat[0][0] << "-9494" << endl;
+	WarpScale(src, img, TransMat[0][0]);
+	return img;
+}
 
 // 高斯模糊
 static void GauBlur3d(vector<float>& img_gau, const vector<float>& img_ori,
@@ -417,8 +500,8 @@ static void GauBlur3d(vector<float>& img_gau, const vector<float>& img_ori,
 					idx = (height-1);
 				}
 				sumR += img_gauX[(idx*width + i)*3 + 0] * gau_mat[k];
-				sumG += img_gauX[(idx*width + i)*3 + 2] * gau_mat[k];
-				sumB += img_gauX[(idx*width + i)*3 + 3] * gau_mat[k];
+				sumG += img_gauX[(idx*width + i)*3 + 1] * gau_mat[k];
+				sumB += img_gauX[(idx*width + i)*3 + 2] * gau_mat[k];
 
 			}
 			img_gau[(j*width + i)*3 + 0] = sumR;
@@ -510,7 +593,7 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 	auto&& Blend_to_imgraw = [](const Blend_Image& src){
 		vector<unsigned char> temp(src.width*src.height*3);
 		for(size_t i = 0; i < temp.size(); i++){
-			temp[i]=src.RGB[i];
+			temp[i] = (unsigned char)src.RGB[i];
 		}
 		ImgRaw dst(temp, src.width, src.height, 24);
 		return dst;
@@ -597,6 +680,8 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 	outputArrays.clear();
 	outputArrays.resize(PYR_OCTAVE);
 	outputArrays[0] = tmp;
+	//Blend_to_imgraw(tmp).bmp("overlap1 .bmp");
+
 
 	float sigma = sqrt((-1) * pow(2.f, 2.f) / (2.f * log(0.5f)));
 	// 縮小的變換矩陣.
@@ -609,16 +694,20 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 
 	//system("pause");
 
-
+	// 模糊圖片
 	for(int i = 1; i < PYR_OCTAVE; i++) {
 		// 模糊圖片.
-		const Blend_Image&& blurImg = BlurImage(outputArrays[i - 1], sigma, PYR_R);
-
-		// TODO 這裡就出事了
-		// Blend_to_imgraw(blurImg).bmp("blurImg .bmp");
+		const Blend_Image blurImg = BlurImage(outputArrays[i - 1], sigma, PYR_R);
 		// 縮小圖片.
-		const Blend_Image&& scalImg = Bicubic(blurImg, transMat_0_5);
+		//WarpScale(blurImg, outputArrays[i], 0.5);
+		
+		// todo 模糊圖片
+		const Blend_Image scalImg = Bicubic(blurImg, transMat_0_5);
 		outputArrays[i] = scalImg;
+
+		// 測試
+		//Blend_to_imgraw(blurImg).bmp("__blurImg.bmp");
+		//Blend_to_imgraw(outputArrays[i]).bmp("__scale.bmp");
 	}
 	// 放大的變換矩陣.
 	float transMat_2[3][3] = {
@@ -626,10 +715,34 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 		{  0.f, 2.0f, 0.f },
 		{  0.f,  0.f, 1.f }
 	};
-	for(int a = 0; a < PYR_OCTAVE - 1; a++) {
+
+	// 相減圖片
+	for(int i = 0; i < PYR_OCTAVE - 1; i++) {
 		// 縮小圖片.
-		const Blend_Image&& scalImg = Bicubic(outputArrays[a+1], transMat_2);
-		outputArrays[a] = sub(outputArrays[a], scalImg);
+		Blend_Image scalImg;
+		scalImg = Bicubic(outputArrays[i+1], transMat_2);
+		//WarpScale(outputArrays[i+1], scalImg, 2);
+		// todo 相減圖片
+
+		// 相減
+		outputArrays[i] = sub(outputArrays[i], scalImg);
+
+		// 測試
+		//Blend_to_imgraw(scalImg).bmp("__scalImg2.bmp");
+
+		auto&& Blend_to_imgraw2 = [](const Blend_Image& src){
+			vector<unsigned char> temp(src.width*src.height*3);
+			for(size_t i = 0; i < temp.size(); i++){
+				temp[i]=(unsigned char)src.RGB[i];
+				temp[i]+=128;
+			}
+			ImgRaw dst(temp, src.width, src.height, 24);
+			return dst;
+		};
+
+		//Blend_to_imgraw(outputArrays[i]).bmp("__cut.bmp");
+
+		cout << endl;
 	}
 
 	return OverlapBool;
@@ -637,24 +750,25 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 // 多頻段混合，輸入圖L與圖R，還有圖R的偏移量.
 void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 {
-	// 我把他寫出去了，一開始對齊就修正好
-	/*if(dx % 2 == 0) {
-		if(dx + 1 <= limg.getCol() && dx + 1 <= rimg.getCol()) {
-			dx += 1;
-		} else {
-			dx -= 1;
+	// 轉換用函式.
+	auto&& raw_to_imgraw = [](const Raw& src){
+		ImgRaw dst(src.RGB, src.getCol(), src.getRow(), 24);
+		return dst;
+	};
+	auto&& imgraw_to_raw = [](const ImgRaw& src){
+		Raw dst(src.width, src.height);
+		dst.RGB = src; // 這裡會呼叫重載函式轉uch
+		return dst;
+	};
+	auto&& Blend_to_imgraw = [](const Blend_Image& src){
+		vector<unsigned char> temp(src.width*src.height*3);
+		for(size_t i = 0; i < temp.size(); i++){
+			temp[i]=(unsigned char)src.RGB[i];
 		}
-	}
-	if(dy % 2 == 0) {
-		if(dy + 1 <= limg.getRow() && dy + 1 <= rimg.getRow()) {
-			dy += 1;
-		} else {
-			dy -= 1;
-		}
-	} else if(dy % 2 == 1){
-		dy += 1;
-	}*/
-
+		ImgRaw dst(temp, src.width, src.height, 24);
+		return dst;
+	};
+	//============================================================
 
 	vector<Blend_Image> llpyr, rlpyr;
 	vector<bool> bol, bor; // 兩圖像的重疊區域，或是合集
@@ -662,9 +776,9 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 	bor = buildLaplacianMap(rimg, rlpyr, dx, dy, RIGHT);
 
 	int center = 0;
-	int i, c;
 	vector<Blend_Image> LS(PYR_OCTAVE);
 	vector<float> k = getGaussianKernel_rr(llpyr[llpyr.size() - 1].width, llpyr[llpyr.size() - 1].height, llpyr[llpyr.size() - 1].width, 0);
+	
 	for (int a = 0; a < llpyr.size(); a++)
 	{
 		LS[a].width = llpyr[a].width;
@@ -673,8 +787,8 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 		center = (int)(llpyr[a].width / 2);
 
 		for(int j = 0; j < LS[a].height; j++) {
-			for(i = 0; i < LS[a].width; i++) {
-				for(c = 0; c < 3; c++) {
+			for(int i = 0; i < LS[a].width; i++) {
+				for(int c = 0; c < 3; c++) {
 					if(a == llpyr.size() - 1) {
 						LS[a].RGB[(j * LS[a].width + i) * 3 + c] = llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c] * k[j * llpyr[a].width + i];
 						LS[a].RGB[(j * LS[a].width + i) * 3 + c] += rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c] * (1.f - k[j * llpyr[a].width + i]);
@@ -691,47 +805,45 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 			}
 		}
 	}
+
 	float transMat_2[3][3] = { { 2.0f, 0.f, 0.f },{ 0.f, 2.0f, 0.f },{ 0.f, 0.f, 1.f } };
+	
 	Blend_Image result;
-	for(int a = PYR_OCTAVE - 1; a > 0; a--) {
+	int a, j, i, c;
+
+//#pragma omp parallel for private(i, j, i, c, result)
+	Timer t1;
+	for(a = PYR_OCTAVE - 1; a > 0; a--) {
 		result = Bicubic(LS[a], transMat_2);
 
-		for(int j = 0; j < LS[a - 1].height; j++) {
+		Blend_to_imgraw(LS[a]).bmp("overlap.bmp");
+		//WarpScale(LS[i], result, 2.0);
+		auto currW = LS[a - 1].width;
+		float* imgData = LS[a - 1].RGB;
+
+//#pragma omp parallel for private(i, j, c)
+		for(j = 0; j < LS[a - 1].height; j++) {
 			for(i = 0; i < LS[a - 1].width; i++) {
 				for(c = 0; c < 3; c++) {
 					if(j < result.height && i < result.width) {
-						LS[a - 1].RGB[(j * LS[a - 1].width + i) * 3 + c] = 
-							LS[a - 1].RGB[(j * LS[a - 1].width + i) * 3 + c] + result.RGB[(j * result.width + i) * 3 + c];
-						LS[a - 1].RGB[(j * LS[a - 1].width + i) * 3 + c] = 
-							LS[a - 1].RGB[(j * LS[a - 1].width + i) * 3 + c] < 0.f ? 
-								0.f : LS[a - 1].RGB[(j * LS[a - 1].width + i) * 3 + c] > 255.f ? 
-								255.f : LS[a - 1].RGB[(j * LS[a - 1].width + i) * 3 + c];
+						auto& temp1 = imgData[(j*currW +i)*3 +c];
+						auto& temp2 = result.RGB[(j*result.width +i)*3 +c];
+						imgData[(j*currW +i)*3 +c] = temp1 + temp2;
+
+						/*LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] = 
+							LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] < 0.f ? 
+								0.f : LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] > 255.f ? 
+								255.f : LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c];*/
 					}
 				}
 			}
 		}
 	}
+	t1.print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 
 	result = LS[0];
 
-	// 轉換用函式.
-	auto&& raw_to_imgraw = [](const Raw& src){
-		ImgRaw dst(src.RGB, src.getCol(), src.getRow(), 24);
-		return dst;
-	};
-	auto&& imgraw_to_raw = [](const ImgRaw& src){
-		Raw dst(src.width, src.height);
-		dst.RGB = src; // 這裡會呼叫重載函式轉uch
-		return dst;
-	};
-	auto&& Blend_to_imgraw = [](const Blend_Image& src){
-		vector<unsigned char> temp(src.width*src.height*3);
-		for(size_t i = 0; i < temp.size(); i++){
-			temp[i]=src.RGB[i];
-		}
-		ImgRaw dst(temp, src.width, src.height, 24);
-		return dst;
-	};
+
 
 	//Blend_to_imgraw(LS[0]).bmp("overlap.bmp");
 
@@ -896,6 +1008,7 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 	const vector<float>& HomogMat, 
 	const Feature* const * RANSAC_feat, int RANSAC_num)
 {
+	Timer t1;
 	//------------------------------------------------------------------------
 	// 轉換用函式.
 	auto&& raw_to_imgraw = [](const Raw& src){
@@ -914,6 +1027,8 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 	};
 	//------------------------------------------------------------------------
 	// WarpPerspective
+//#define WarpPerspective
+#ifdef WarpPerspective
 	// todo 這裡的長寬沒有算出來，有空讓他自動算出完整的大小
 	Raw warpImg(InputImage[1].getCol()*1.6, InputImage[1].getRow()*1.1);
 	//Raw warpImg(InputImage[1].getCol(), InputImage[1].getRow());
@@ -931,7 +1046,7 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 				warpImg2[j*warpImg2.width*3 + i*3+1] == 0 and
 				warpImg2[j*warpImg2.width*3 + i*3+2] == 0)
 			{
-				// 這裡要補原圖a的.
+				// 這裡要補原圖i的.
 				matchImg[j*matchImg.width*3 + i*3+0] = img1[j*img1.width*3 + i*3+0];
 				matchImg[j*matchImg.width*3 + i*3+1] = img1[j*img1.width*3 + i*3+1];
 				matchImg[j*matchImg.width*3 + i*3+2] = img1[j*img1.width*3 + i*3+2];
@@ -960,13 +1075,14 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 			}
 		}
 	}
-	//matchImg.bmp("_matchImg_Warp.bmp");
+	matchImg.bmp("_matchImg_Warp.bmp");
+#endif // WarpPerspective
 	//------------------------------------------------------------------------
-	// 獲取共同焦距ft
+	// 獲取共同焦距ft (0.001s)
 	float ft = getFocal(HomogMat, img1.size(), img2.size());
 	cout << "ft = " << ft << endl;
-
-	// Warping 圓柱投影.
+	
+	// Warping 圓柱投影 (0.012s)
 	vector<fpoint> upedge;
 	vector<fpoint> downedge;
 	vector<Raw> warpingImg;
@@ -977,7 +1093,8 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 
 
 	//-------------------------------------------------------------------------
-	//Align 對齊.
+	//Align 對齊(0.001s)
+
 	vector<int> Align_dx, Align_dy; // 第二張圖整張的偏移量
 	alignMatch(InputImage[0], InputImage[1], RANSAC_feat, RANSAC_num, Align_dx, Align_dy, ft);
 	cout << "dxSize = " << Align_dx.size() << ", dx = " << Align_dx[0] << endl;
@@ -985,8 +1102,8 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 
 
 	//-------------------------------------------------------------------------
-	// Blend 多頻段混合.
-		for(int num = 0; num < warpingImg.size() - 1; num++) {
+	// Blend 多頻段混合(0.275s)
+	for(int num = 0; num < warpingImg.size() - 1; num++) {
 		if(Align_dy[num] > warpingImg[num].getRow()) { // 假如 y 的偏移量大於圖片高
 			int dyy = -(warpingImg[num].getRow() - abs(warpingImg[num].getRow() - Align_dy[num]));
 			cout << "dy--->dyy = " << Align_dy[num] << ", " << dyy << endl;
@@ -1000,9 +1117,10 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 	 //raw_to_imgraw(warpingImg[0]).bmp("_WarpBlend1.bmp");
 	 //raw_to_imgraw(warpingImg[1]).bmp("_WarpBlend2.bmp");
 
+	Timer tt1;
 
 	//-------------------------------------------------------------------------
-	// Writing 輸出圖片.
+	// Writing 輸出圖片 (0.107s)
 	int cols = 0;
 	int rows = 0;
 	for(int i = 0; i < warpingImg.size(); i++) {
@@ -1075,13 +1193,13 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 		for(int b = distancey; b < distancey+currH; b++) {
 			for(int a = distance; a < currW + distance; a++) {
 				if(b >= 0) {
-					//if (result.RGB[(b * result.getCol() + a) * 3 + 0] == 0 && result.RGB[(b * result.getCol() + a) * 3 + 1] == 0 && result.RGB[(b * result.getCol() + a) * 3 + 2] == 0)
+					//if (result.RGB[(b * result.getCol() + i) * 3 + 0] == 0 && result.RGB[(b * result.getCol() + i) * 3 + 1] == 0 && result.RGB[(b * result.getCol() + i) * 3 + 2] == 0)
 					//{
-					//if (b - distancey >= 0 && b - distancey<warpingImg[i].getRow() && a - distance >= 0 && a - distance<warpingImg[i].getCol())
+					//if (b - distancey >= 0 && b - distancey<warpingImg[i].getRow() && i - distance >= 0 && i - distance<warpingImg[i].getCol())
 					//{
-					//result.RGB[(b * result.getCol() + a) * 3 + 0] = warpingImg[i].RGB[((b - distancey) * warpingImg[i].getCol() + (a - distance)) * 3 + 0];
-					//result.RGB[(b * result.getCol() + a) * 3 + 1] = warpingImg[i].RGB[((b - distancey) * warpingImg[i].getCol() + (a - distance)) * 3 + 1];
-					//result.RGB[(b * result.getCol() + a) * 3 + 2] = warpingImg[i].RGB[((b - distancey) * warpingImg[i].getCol() + (a - distance)) * 3 + 2];
+					//result.RGB[(b * result.getCol() + i) * 3 + 0] = warpingImg[i].RGB[((b - distancey) * warpingImg[i].getCol() + (i - distance)) * 3 + 0];
+					//result.RGB[(b * result.getCol() + i) * 3 + 1] = warpingImg[i].RGB[((b - distancey) * warpingImg[i].getCol() + (i - distance)) * 3 + 1];
+					//result.RGB[(b * result.getCol() + i) * 3 + 2] = warpingImg[i].RGB[((b - distancey) * warpingImg[i].getCol() + (i - distance)) * 3 + 2];
 					//}
 					//}
 
@@ -1168,6 +1286,7 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 		}
 	}
 	cutImage.bmp("_cutImg.bmp");
+	tt1.print(">>>>>>>>>>>>>>>>>>>>>>>>>>>tt1 #");
 }
 
 

@@ -109,17 +109,10 @@ static double average(const ImgRaw& img, int x, int y) {
 			int thisx = x + i;
 			int thisy = y + j;
 			// 處理負號
-			if(thisx < 0.0 ) {
-				thisx = 0;
-			}
-			if(thisx >= img.width) {
-				thisx = img.width-1;
-			}
-			if(thisy < 0.0) {
-				thisy = 0;
-			}
-			if(thisy >= img.height) {
-				thisy = img.height-1;
+			if(thisx < 0.0 or thisx >= img.width-1 or 
+				thisy < 0.0 or thisy > img.height-1)
+			{
+				throw out_of_range("out");
 			}
 			// 累加
 			int posi = thisy * img.width + thisx;
@@ -143,7 +136,8 @@ static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 // 描述一個特徵點
 static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 	OrbDest bin;
-	for(size_t k = 0; k < 128; k++) {
+#pragma omp parallel for
+	for(int k = 0; k < 128; k++) {
 		// 根據角度選不同位移組
 
 		// 描述點對
@@ -171,7 +165,8 @@ static void desc_ORB(const ImgRaw& img, Feat& feat) {
 	img2.nomal=0;
 	Lowpass(img, img2, 3);
 	vector<OrbDest> bin(feat.size());
-	for(size_t i = 0; i < feat.size(); i++) {
+#pragma omp parallel for
+	for(int i = 0; i < feat.size(); i++) {
 		// 描述
 		int x = feat[i].x;
 		int y = feat[i].y;
@@ -184,6 +179,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	fast(img, feat);
 	// Harris過濾角點
 	//harris_coners(img, feat);
+
 
 
 	Mat image(img.height, img.width, CV_32F, (void*)img.raw_img.data());
@@ -208,7 +204,10 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 
 	cout << "FAST corner 數量 = " << feat.len << endl;
 	vector<Point2f> corners;
-	goodFeaturesToTrack(gray, corners, 2000, 0.01, 10, mask, 3, true, 0.04);
+	
+	goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
+	
+
 	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
 	cout << "Harris corner 數量 = " << corners.size() << endl;
 
