@@ -20,6 +20,7 @@ using namespace cv;
 
 #include "stitch\imagedata.hpp"
 #include "stitch\Blend.hpp"
+#include "getFocus\getFocus.hpp"
 
 #include "ORB.hpp"
 
@@ -29,8 +30,8 @@ int main(int argc, char const *argv[]) {
 #ifdef harrisTest
 	opencvHarris3();
 #else
-	//string name1 = "sc02.bmp", name2= "sc03.bmp";
-	string name1 = "ball_01.bmp", name2= "ball_02.bmp";
+	string name1 = "srcImg\\sc02.bmp", name2= "srcImg\\sc03.bmp";
+	//string name1 = "srcImg\\ball_01.bmp", name2= "srcImg\\ball_02.bmp";
 	// 開圖
 	ImgRaw img1(name1, "", 0);
 	ImgRaw img1_gray = img1.ConverGray();
@@ -58,6 +59,7 @@ int main(int argc, char const *argv[]) {
 	//stackImg.bmp("merge.bmp");
 	//featDrawLine("line.bmp", stackImg, feat2);
 
+	cout << "=======================================" << endl;
 	// 縫合圖片
 	ImgRaw imgL(name1);
 	ImgRaw imgR(name2);
@@ -69,7 +71,13 @@ int main(int argc, char const *argv[]) {
 	//featDrawLine2("_matchImg_RANSACImg.bmp", stackImg, RANSAC_feat, RANSAC_num);
 	t1.start();
 
-	blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
+	// 獲得偏差值
+	int x=0, y=0; float ft=0;
+	ft = getWarpFocal(HomogMat, imgL.size(), imgR.size());
+	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, x, y, ft);
+	cout << "ft=" << ft << ", Offset(" << x << ", " << y << ")" << endl;
+
+	//blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
 	t1.print(" >>>>>>>>>>>>>>>>>>blen2img"); // 0.4
 
 	total.print("total time"); //0.8

@@ -155,6 +155,7 @@
     <ClCompile Include="fastlib\fast_9.c" />
     <ClCompile Include="fastlib\nonmax.c" />
     <ClCompile Include="feat\feat.cpp" />
+    <ClCompile Include="getFocus\getFocus.cpp" />
     <ClCompile Include="harris_coners\harris_coners.cpp" />
     <ClCompile Include="ImgRaw\imglib\imglib.cpp" />
     <ClCompile Include="ImgRaw\Imgraw.cpp" />
@@ -168,6 +169,7 @@
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h" />
     <ClInclude Include="feat\feat.hpp" />
+    <ClInclude Include="getFocus\getFocus.hpp" />
     <ClInclude Include="harris_coners\harris_coners.hpp" />
     <ClInclude Include="ImgRaw\imglib\imglib.hpp" />
     <ClInclude Include="ImgRaw\Imgraw.hpp" />

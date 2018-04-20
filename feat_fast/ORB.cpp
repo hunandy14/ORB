@@ -405,7 +405,7 @@ void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
 			idx++;
 		}
 	}
-	cout << "idxxxxxx=" << i << ", " << idx << endl;
+	//cout << "idxxxxxx=" << i << ", " << idx << endl;
 
 	outImg.bmp(name, 24);
 }
@@ -433,7 +433,7 @@ void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RA
 			cerr << "RANSAC feat[i].fwd_match is nullptr" << endl;
 		}
 	}
-	cout << "idxxxxxx=" << i << endl;
+	//cout << "idxxxxxx=" << i << endl;
 	outImg.bmp(name, 24);
 }
 // 轉換到 blen 的資料結構
@@ -475,5 +475,5 @@ void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
 		}
 	}
 	RANfeatNum=idx;
-	cout << "idxxxxxx=" << i << ", " << idx << endl;
+	//cout << "idxxxxxx=" << i << ", " << idx << endl;
 }

@@ -49,6 +49,9 @@
     <Filter Include="自訂函式庫\WarpCyli">
       <UniqueIdentifier>{2631c066-72c1-458e-bb64-fa876456c19e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="自訂函式庫\getFocus">
+      <UniqueIdentifier>{8aa032d5-e26b-43af-8b07-0bab2290db0f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -99,6 +102,9 @@
     <ClCompile Include="ORB.cpp">
       <Filter>來源檔案\ORB</Filter>
     </ClCompile>
+    <ClCompile Include="getFocus\getFocus.cpp">
+      <Filter>自訂函式庫\getFocus</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImgRaw\Imgraw.hpp">
@@ -139,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="ORB.hpp">
       <Filter>來源檔案\ORB</Filter>
+    </ClInclude>
+    <ClInclude Include="getFocus\getFocus.hpp">
+      <Filter>自訂函式庫\getFocus</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
