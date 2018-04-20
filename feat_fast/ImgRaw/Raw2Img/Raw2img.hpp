@@ -3,8 +3,27 @@ Name :
 Date : 2017/06/12
 By   : CharlotteHonG
 Final: 2017/06/14
+
+使用說明：
+
+// 宣告資料項目
+string filename = "kanna.bmp";
+vector<unsigned char> raw_img;
+uint32_t weidth, heigh;
+uint16_t bits;
+// 讀 Bmp
+Raw2Img::read_bmp(raw_img, filename, &weidth, &heigh, &bits);
+// 寫 raw
+Raw2Img::write_raw("out.raw", raw_img);
+// 寫 Bmp
+Raw2Img::raw2bmp("out.bmp", raw_img, weidth, heigh, bits);
+// 轉灰階 
+Raw2Img::raw2gray(raw_img);
+Raw2Img::raw2bmp("out.bmp", raw_img, weidth, heigh, 8);
+
 *****************************************************************/
 #pragma once
+#include <iostream>
 #include <fstream>
 #include "Raw2img_type.hpp"
 //----------------------------------------------------------------
@@ -71,7 +90,7 @@ public:
     // 讀 Raw 檔
     static void read_raw(std::vector<uch>& raw, std::string name);
     // 寫 Bmp 檔
-    static void raw2bmp(std::string name, std::vector<uch>& raw,
+    static void raw2bmp(std::string name, const std::vector<uch>& raw,
         uint32_t width, uint32_t height, uint16_t bits=24);
     // 寫 Raw 檔
     static void write_raw(std::string name, std::vector<uch>& raw);

@@ -14,8 +14,7 @@ using namespace std;
 using uch = unsigned char;
 //----------------------------------------------------------------
 // 寫 Bmp 檔
-void Raw2Img::raw2bmp(
-    string name, vector<uch>& raw,
+void Raw2Img::raw2bmp(string name, const vector<uch>& raw,
     uint32_t width, uint32_t height, uint16_t bits)
 {
     // 檔案資訊
