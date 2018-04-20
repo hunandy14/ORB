@@ -21,8 +21,8 @@ using namespace cv;
 #include "opencvTest.hpp"
 
 
-#include "stitch\imagedata.hpp"
-#include "stitch\Blend.hpp"
+//#include "stitch\imagedata.hpp"
+//#include "stitch\Blend.hpp"
 #include "ORB.hpp"
 //====================================================================================
 void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
@@ -202,14 +202,14 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		}
 	}
 
-	cout << "FAST corner 计秖 = " << feat.len << endl;
+	//cout << "FAST corner 计秖 = " << feat.len << endl;
 	vector<Point2f> corners;
 	
 	goodFeaturesToTrack(gray, corners, 1500, 0.01, 10, mask, 3, true, 0.04);
 	
 
 	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
-	cout << "Harris corner 计秖 = " << corners.size() << endl;
+	//cout << "Harris corner 计秖 = " << corners.size() << endl;
 
 	// 恶 xy 竚
 	int newLen=0;
@@ -220,7 +220,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 			throw("x<edg");
 		}
 		if(i==1) {
-			cout << "x=" << x << endl;
+			//cout << "x=" << x << endl;
 		}
 		feat[i].x = x;
 		feat[i].y = y;
@@ -299,8 +299,8 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	}
 
 	//-- Quick calculation of max and min distances between keypoints
-	printf("-- Max dist : %d \n", max_dist);
-	printf("-- Min dist : %d \n", min_dist);
+	//printf("-- Max dist : %d \n", max_dist);
+	//printf("-- Min dist : %d \n", min_dist);
 
 	//-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
 	feat1.distance.resize(feat1.size());
@@ -356,9 +356,9 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
 		for(size_t i = 0; i < Hog.cols; i++, idx++) {
 			HomogMat[idx]=Hog.at<double>(j, i);
-			cout << HomogMat[idx] << ", ";
-		} cout << endl;
-	} cout << endl;
+			//cout << HomogMat[idx] << ", ";
+		}// cout << endl;
+	} //cout << endl;
 
 	//cout << "Hog=\n" << Hog << endl;
 }

@@ -5,7 +5,10 @@ By   : CharlotteHonG
 Final: 2018/03/19
 *****************************************************************/
 #pragma once
-
+#include "Imgraw.hpp"
+#include "feat.hpp"
+#include "getFocus\getFocus.hpp"
+#include "LapBlend\LapBlend.hpp"
 
 // º~©ú¶ZÂ÷
 void create_ORB(const ImgRaw & img, Feat & feat);

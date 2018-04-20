@@ -31,9 +31,6 @@
     <Filter Include="自訂函式庫">
       <UniqueIdentifier>{c173f442-e7a7-4da3-8c69-7b9722a251b9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="自訂函式庫\stitch">
-      <UniqueIdentifier>{75fc5c2f-96ce-4726-9ba6-44a8cfa106ee}</UniqueIdentifier>
-    </Filter>
     <Filter Include="自訂函式庫\Imgraw">
       <UniqueIdentifier>{5306abe1-9297-4996-b380-81500c981c46}</UniqueIdentifier>
     </Filter>
@@ -46,11 +43,11 @@
     <Filter Include="來源檔案\ORB">
       <UniqueIdentifier>{b6c17fae-f977-43cd-a62c-c7e3c4b2ce57}</UniqueIdentifier>
     </Filter>
-    <Filter Include="自訂函式庫\WarpCyli">
-      <UniqueIdentifier>{2631c066-72c1-458e-bb64-fa876456c19e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="自訂函式庫\getFocus">
       <UniqueIdentifier>{8aa032d5-e26b-43af-8b07-0bab2290db0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="自訂函式庫\LapBlend">
+      <UniqueIdentifier>{784a8a4c-8d0a-45d3-a431-c022bc0e4899}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -93,17 +90,14 @@
     <ClCompile Include="ImgRaw\Raw2Img\Raw2img.cpp">
       <Filter>自訂函式庫\Imgraw\Raw2Img</Filter>
     </ClCompile>
-    <ClCompile Include="stitch\Blend.cpp">
-      <Filter>自訂函式庫\stitch</Filter>
-    </ClCompile>
-    <ClCompile Include="stitch\stitch.cpp">
-      <Filter>自訂函式庫\stitch</Filter>
-    </ClCompile>
     <ClCompile Include="ORB.cpp">
       <Filter>來源檔案\ORB</Filter>
     </ClCompile>
     <ClCompile Include="getFocus\getFocus.cpp">
       <Filter>自訂函式庫\getFocus</Filter>
+    </ClCompile>
+    <ClCompile Include="LapBlend\LapBlend.cpp">
+      <Filter>自訂函式庫\LapBlend</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -131,15 +125,6 @@
     <ClInclude Include="ORB_bit_pattern_31_.hpp">
       <Filter>標頭檔</Filter>
     </ClInclude>
-    <ClInclude Include="stitch\Blend.hpp">
-      <Filter>自訂函式庫\stitch</Filter>
-    </ClInclude>
-    <ClInclude Include="stitch\stitch.hpp">
-      <Filter>自訂函式庫\stitch</Filter>
-    </ClInclude>
-    <ClInclude Include="stitch\imagedata.hpp">
-      <Filter>自訂函式庫\stitch</Filter>
-    </ClInclude>
     <ClInclude Include="fastlib\fast.h">
       <Filter>外部函式庫\fast</Filter>
     </ClInclude>
@@ -148,6 +133,9 @@
     </ClInclude>
     <ClInclude Include="getFocus\getFocus.hpp">
       <Filter>自訂函式庫\getFocus</Filter>
+    </ClInclude>
+    <ClInclude Include="LapBlend\LapBlend.hpp">
+      <Filter>自訂函式庫\LapBlend</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

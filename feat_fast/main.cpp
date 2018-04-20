@@ -14,14 +14,7 @@ using namespace std;
 using namespace cv;
 #include <Timer.hpp>
 //====================================================================================
-#include "Imgraw.hpp"
-#include "feat.hpp"
 #include "opencvTest.hpp"
-
-#include "stitch\imagedata.hpp"
-#include "stitch\Blend.hpp"
-#include "getFocus\getFocus.hpp"
-
 #include "ORB.hpp"
 
 //====================================================================================
@@ -36,13 +29,17 @@ int main(int argc, char const *argv[]) {
 	ImgRaw img1(name1, "", 0);
 	ImgRaw img1_gray = img1.ConverGray();
 	img1_gray.nomal=0;
+	basic_ImgData warpL, warpR, lapblend;
 	// 開圖
 	ImgRaw img2(name2, "", 0);
 	ImgRaw img2_gray = img2.ConverGray();
 	img2_gray.nomal=0;
+	ImgData_read(warpL, name1);
+	ImgData_read(warpR, name2);
 
 
 	Timer total, t1;
+	t1.priSta=1;
 	// ORB
 	t1.start();
 	Feat feat, feat2;
@@ -55,7 +52,7 @@ int main(int argc, char const *argv[]) {
 	matchORB(feat2, feat, HomogMat);
 	t1.print(" >>>>>>>>>>>>>>>>>>matchORB"); // 0.006
 	// 測試配對點
-	ImgRaw stackImg = imgMerge(img1, img2);
+	//ImgRaw stackImg = imgMerge(img1, img2);
 	//stackImg.bmp("merge.bmp");
 	//featDrawLine("line.bmp", stackImg, feat2);
 
@@ -69,19 +66,21 @@ int main(int argc, char const *argv[]) {
 	//RANSAC_feat = new Feature*[RANSAC_num];
 	getNewfeat(feat2, RANSAC_feat, RANSAC_num);
 	//featDrawLine2("_matchImg_RANSACImg.bmp", stackImg, RANSAC_feat, RANSAC_num);
-	t1.start();
+	//====================================================================================
 
 	// 獲得偏差值
-	int x=0, y=0; float ft=0;
+	int mx=0, my=0; float ft=0;
+	t1.start();
 	ft = getWarpFocal(HomogMat, imgL.size(), imgR.size());
-	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, x, y, ft);
-	cout << "ft=" << ft << ", Offset(" << x << ", " << y << ")" << endl;
-
+	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, ft);
+	//cout << "ft=" << ft << ", Offset(" << mx << ", " << my << ")" << endl;
+	//====================================================================================
 	//blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
+	LapBlender(lapblend, warpL, warpR, ft, mx, my);
 	t1.print(" >>>>>>>>>>>>>>>>>>blen2img"); // 0.4
 
 	total.print("total time"); //0.8
-
+	ImgData_write(lapblend, "__lapBlend.bmp");
 
 #endif // harrisTest
 	return 0;
