@@ -37,10 +37,10 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 // 灰度質心法
 static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	vector<double> feat_sita(feat.size());
+
 	for(int idx = 0; idx < feat.size();) {
 		double m01 = 0;
 		double m10 = 0;
-
 		for(int j = -radius; j <= radius; j++) {
 			for(int i = -radius; i <= radius; i++) {
 				int thisx = feat[idx].x + i;
@@ -50,7 +50,7 @@ static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 					(thisy < 0.0 or thisy >= img.height)) {
 					cout << "thisx=" << thisx << endl;
 					cout << "thisy=" << thisy << endl;
-					throw out_of_range("出現負號");
+					//throw out_of_range("出現負號");
 				} else {
 					m10 += i * img[posi];
 					m01 += j * img[posi];
@@ -136,7 +136,7 @@ static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 // 描述一個特徵點
 static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 	OrbDest bin;
-#pragma omp parallel for
+//#pragma omp parallel for
 	for(int k = 0; k < 128; k++) {
 		// 根據角度選不同位移組
 
@@ -189,7 +189,8 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
 	// 把 feat 的 xy 轉到 mask
 	int edg=3+20;
-	for(size_t i = 0; i < feat.len; i++) {
+
+	for(int i = 0; i < feat.len; i++) {
 		//idx = (feat.feat->y)*image.rows + (feat.feat->x);
 		int x=feat[i].x;
 		int y=feat[i].y;
@@ -247,11 +248,11 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	// 灰度重心法
 	GrayCenterOfMass(img, feat, 3);
 
-	ImgRaw temp = img;
-	for(size_t i = 0; i < feat.size(); i++) {
+	//ImgRaw temp = img;
+	//for(size_t i = 0; i < feat.size(); i++) {
 		//Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
-	}
-	static int num=0;
+	//}
+	//static int num=0;
 	//temp.bmp("arrow"+to_string(num++)+".bmp");
 
 
@@ -270,10 +271,13 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 
 	int max_dist = 0; int min_dist = 100;
 	feat1.distance.resize(feat1.size());
-	for(size_t j = 0; j < feat1.size(); j++) {
+
+
+#pragma omp parallel for
+	for(int j = 0; j < feat1.size(); j++) {
 		int dist = numeric_limits<int>::max();
 		int matchIdx = -1;
-		for(size_t i = 0; i < feat2.size(); i++) {
+		for(int i = 0; i < feat2.size(); i++) {
 			int distCurr = hamDist(feat1.bin[j], feat2.bin[i]);
 			// 距離較短則更新
 			if(distCurr < dist) {
@@ -360,7 +364,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 		}// cout << endl;
 	} //cout << endl;
 
-	//cout << "Hog=\n" << Hog << endl;
+	cout << "Hog=\n" << Hog << endl;
 }
 
 

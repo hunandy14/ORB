@@ -30,6 +30,8 @@ int main(int argc, char const *argv[]) {
 	ImgRaw img1_gray = img1.ConverGray();
 	img1_gray.nomal=0;
 	basic_ImgData warpL, warpR, lapblend;
+	ImgRaw imgL(name1);
+	ImgRaw imgR(name2);
 	// 開圖
 	ImgRaw img2(name2, "", 0);
 	ImgRaw img2_gray = img2.ConverGray();
@@ -38,14 +40,17 @@ int main(int argc, char const *argv[]) {
 	ImgData_read(warpR, name2);
 
 
+	//====================================================================================
 	Timer total, t1;
 	t1.priSta=1;
 	// ORB
-	t1.start();
 	Feat feat, feat2;
+	t1.start();
 	create_ORB(img1_gray, feat);
+	t1.print(" >>>>>>>>>>>>>>>>>>create_ORB1"); // 0.274
+	t1.start();
 	create_ORB(img2_gray, feat2);
-	t1.print(" >>>>>>>>>>>>>>>>>>create_ORB"); // 0.274
+	t1.print(" >>>>>>>>>>>>>>>>>>create_ORB2"); // 0.274
 	// 尋找配對點
 	vector<float> HomogMat;
 	t1.start();
@@ -58,9 +63,6 @@ int main(int argc, char const *argv[]) {
 
 	cout << "=======================================" << endl;
 	// 縫合圖片
-	ImgRaw imgL(name1);
-	ImgRaw imgR(name2);
-
 	size_t RANSAC_num=0;
 	Feature** RANSAC_feat=nullptr;
 	//RANSAC_feat = new Feature*[RANSAC_num];
@@ -75,9 +77,8 @@ int main(int argc, char const *argv[]) {
 	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, ft);
 	//cout << "ft=" << ft << ", Offset(" << mx << ", " << my << ")" << endl;
 	//====================================================================================
-	//blen2img(imgL, imgR, HomogMat, RANSAC_feat, RANSAC_num);
 	LapBlender(lapblend, warpL, warpR, ft, mx, my);
-	t1.print(" >>>>>>>>>>>>>>>>>>blen2img"); // 0.4
+	t1.print(" >>>>>>>>>>>>>>>>>>LapBlender"); // 0.4->0.04
 
 	total.print("total time"); //0.8
 	ImgData_write(lapblend, "__lapBlend.bmp");
