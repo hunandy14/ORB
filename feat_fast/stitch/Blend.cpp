@@ -91,15 +91,15 @@ void WarpScale(const Blend_Image &src, Blend_Image &dst, double Ratio){
 	int newH = (int)(src.height * Ratio);
 	int newW = (int)(src.width  * Ratio);
 	// 初始化 dst
-	dst.RGB = new float[newW * newW * 3];
+	dst.RGB = new float[newW * newH * 3];
 	dst.width  = newW;
-	dst.height = newW;
+	dst.height = newH;
 	// todo 尼瑪這份代碼有錯，不知道坑在哪要改w*w這樣才會正常.
 
 	// 跑新圖座標
 	volatile double srcY, srcX;
 	int i, j;
-//#pragma omp parallel for private(i, j)
+//#pragma omp parallel for private(j, i)
 	for (j = 0; j < newH; ++j) {
 		for (i = 0; i < newW; ++i) {
 			// 調整對齊
@@ -144,20 +144,19 @@ static vector<float> getGaussianKernel(int x) {
 // 兩圖層相減
 static Blend_Image sub(const Blend_Image& m, const Blend_Image& n)
 {
+	// 初始化 out
 	Blend_Image out;
 	out.width = m.width;
 	out.height = m.height;
 	out.RGB = new float[out.width * out.height * 3];
-	int i = 0, j = 0;
-	for (i = 0; i < out.height; i++)
-	{
-		for (j = 0; j < out.width; j++)
-		{
-			if (i < n.height && j < n.width)
-			{
-				out.RGB[(i * out.width + j) * 3 + 0] = m.RGB[(i * m.width + j) * 3 + 0] - n.RGB[(i * n.width + j) * 3 + 0];
-				out.RGB[(i * out.width + j) * 3 + 1] = m.RGB[(i * m.width + j) * 3 + 1] - n.RGB[(i * n.width + j) * 3 + 1];
-				out.RGB[(i * out.width + j) * 3 + 2] = m.RGB[(i * m.width + j) * 3 + 2] - n.RGB[(i * n.width + j) * 3 + 2];
+
+	int j = 0, i = 0;
+	for(j = 0; j < out.height; j++) {
+		for(i = 0; i < out.width; i++) {
+			if(j < n.height && i < n.width) {
+				out.RGB[(j*out.width +i)*3 +0] = m.RGB[(j*m.width + i)*3 +0] - n.RGB[(j*n.width +i)*3 +0];
+				out.RGB[(j*out.width +i)*3 +1] = m.RGB[(j*m.width + i)*3 +1] - n.RGB[(j*n.width +i)*3 +1];
+				out.RGB[(j*out.width +i)*3 +2] = m.RGB[(j*m.width + i)*3 +2] - n.RGB[(j*n.width +i)*3 +2];
 			}
 		}
 	}
@@ -237,12 +236,13 @@ static vector<struct X_S> getXsize(Blend_Image input)
 	return temp;
 }
 //----------------------------------------
-// 高斯矩陣
+// 高斯矩陣(2D)
 static vector<float> getGaussianKernel_rr(int x, int y, int dx, int dy = 0)
 {
 	vector<float> kernel(x * y, 0.f);
 	float half = (dx - 1) / 2.f;
 	float sigma = sqrt((-1.f) * pow((float)x - 1.f - half, 2.f) / (2.f * std::log(0.5f)));
+
 	for(int i = (x - dx); i < x; i++){
 		float g;
 		if(i <= (x - half)){
@@ -272,7 +272,7 @@ static float BiCubicPoly(float x) {
 }
 // 仿射轉換+線性補值.
 
-// todo 放大縮小
+// todo 放大縮小函式選擇
 static Blend_Image Bicubic(const Blend_Image& src, float TransMat[3][3])
 {
 	Blend_Image dst;
@@ -583,6 +583,8 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 	auto&& imgW = inputArray.getCol();
 	auto&& imgH = inputArray.getRow();
 
+
+	//============================================================
 	// 重疊區起始位置 (所以右圖才是從0, 0開始)
 	int disx = (chkLR == RIGHT) ? 0 : (inputArray.getCol() - dx);
 	int disy = (dy >= 0) ?
@@ -600,6 +602,9 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 	};
 
 	if (disx < 0) { disx = 0; }
+
+
+	//============================================================
 	// copy出重疊區
 	for(int j = 0; j < tmp.height; j++) {
 		for(int i = 0; i < tmp.width; i++) {
@@ -621,6 +626,8 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 	//system("pause");
 	
 
+
+	//============================================================
 	// 把黑色區域補成延伸(降低上下面圓柱切面的不自然)
 	int set_r = 1;
 	int ur = 0, dr = 0;
@@ -683,6 +690,8 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 	//Blend_to_imgraw(tmp).bmp("overlap1 .bmp");
 
 
+	//============================================================
+	// 建立拉普拉斯
 	float sigma = sqrt((-1) * pow(2.f, 2.f) / (2.f * log(0.5f)));
 	// 縮小的變換矩陣.
 	float transMat_0_5[3][3] = {
@@ -718,7 +727,7 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 
 	// 相減圖片
 	for(int i = 0; i < PYR_OCTAVE - 1; i++) {
-		// 縮小圖片.
+		// 放大圖片後相減
 		Blend_Image scalImg;
 		scalImg = Bicubic(outputArrays[i+1], transMat_2);
 		//WarpScale(outputArrays[i+1], scalImg, 2);
@@ -728,20 +737,19 @@ static vector<bool> buildLaplacianMap(const Raw &inputArray, vector<Blend_Image>
 		outputArrays[i] = sub(outputArrays[i], scalImg);
 
 		// 測試
-		//Blend_to_imgraw(scalImg).bmp("__scalImg2.bmp");
+		//Blend_to_imgraw(scalImg).bmp("__scalImg21.bmp");
+		//Blend_to_imgraw(scalImg).bmp("__scalImg22.bmp");
 
 		auto&& Blend_to_imgraw2 = [](const Blend_Image& src){
 			vector<unsigned char> temp(src.width*src.height*3);
 			for(size_t i = 0; i < temp.size(); i++){
-				temp[i]=(unsigned char)src.RGB[i];
-				temp[i]+=128;
+				temp[i]=(unsigned char)src.RGB[i]+128;
 			}
 			ImgRaw dst(temp, src.width, src.height, 24);
 			return dst;
 		};
 
 		//Blend_to_imgraw(outputArrays[i]).bmp("__cut.bmp");
-
 		cout << endl;
 	}
 
@@ -768,19 +776,31 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 		ImgRaw dst(temp, src.width, src.height, 24);
 		return dst;
 	};
-	//============================================================
 
+
+	//============================================================
+	// 建立拉普拉斯金字塔
 	vector<Blend_Image> llpyr, rlpyr;
 	vector<bool> bol, bor; // 兩圖像的重疊區域，或是合集
 	bol = buildLaplacianMap(limg, llpyr, dx, dy, LEFT);
 	bor = buildLaplacianMap(rimg, rlpyr, dx, dy, RIGHT);
 
+
+
+	//============================================================
+	// 混合拉普拉斯
 	int center = 0;
 	vector<Blend_Image> LS(PYR_OCTAVE);
-	vector<float> k = getGaussianKernel_rr(llpyr[llpyr.size() - 1].width, llpyr[llpyr.size() - 1].height, llpyr[llpyr.size() - 1].width, 0);
-	
-	for (int a = 0; a < llpyr.size(); a++)
-	{
+	// 最後一張(最小)拉普拉斯那麼長的 非對稱單邊高斯矩陣
+	vector<float> gausKernal = 
+		getGaussianKernel_rr(
+			llpyr[llpyr.size() - 1].width, 
+			llpyr[llpyr.size() - 1].height, 
+			llpyr[llpyr.size() - 1].width, 
+			0
+		);
+
+	for (int a = 0; a < llpyr.size(); a++) {
 		LS[a].width = llpyr[a].width;
 		LS[a].height = llpyr[a].height;
 		LS[a].RGB = new float[LS[a].width * LS[a].height * 3];
@@ -789,35 +809,51 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 		for(int j = 0; j < LS[a].height; j++) {
 			for(int i = 0; i < LS[a].width; i++) {
 				for(int c = 0; c < 3; c++) {
-					if(a == llpyr.size() - 1) {
-						LS[a].RGB[(j * LS[a].width + i) * 3 + c] = llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c] * k[j * llpyr[a].width + i];
-						LS[a].RGB[(j * LS[a].width + i) * 3 + c] += rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c] * (1.f - k[j * llpyr[a].width + i]);
-					} else {
+					
+					// 拉普拉斯彩色區 (L*高斯) + (R*(1-高斯))
+					if(a == llpyr.size() - 1) { 
+						/*LS[a].RGB[(j * LS[a].width + i) * 3 + c] = 
+							llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c] * gausKernal[j * llpyr[a].width + i] +
+							rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c] * (1.f - gausKernal[j * llpyr[a].width + i]);*/
+						LS[a].RGB[(j * LS[a].width + i) * 3 + c] = 
+							llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c] * gausKernal[i] +
+							rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c] * (1.f - gausKernal[i]);
+
+					// 拉普拉斯差值區 (左邊就放左邊差值，右邊放右邊差值，正中間放平均)
+					} else { 
 						if(i == center) {
-							LS[a].RGB[(j * LS[a].width + i) * 3 + c] = (llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c] + rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c]) / 2.f;
-						} else if(i > center) {
-							LS[a].RGB[(j * LS[a].width + i) * 3 + c] = rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c];
-						} else {
-							LS[a].RGB[(j * LS[a].width + i) * 3 + c] = llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c];
+							LS[a].RGB[(j * LS[a].width + i) * 3 + c] = 
+								(llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c] + rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c]) / 2.f;
+						} else if(i > center) { // 右半部
+							LS[a].RGB[(j * LS[a].width + i) * 3 + c] = 
+								rlpyr[a].RGB[(j * rlpyr[a].width + i) * 3 + c];
+						} else { // 左半部
+							LS[a].RGB[(j * LS[a].width + i) * 3 + c] = 
+								llpyr[a].RGB[(j * llpyr[a].width + i) * 3 + c];
 						}
 					}
 				}
 			}
 		}
 	}
-
 	float transMat_2[3][3] = { { 2.0f, 0.f, 0.f },{ 0.f, 2.0f, 0.f },{ 0.f, 0.f, 1.f } };
 	
+
+
+	//============================================================
+	// 還原拉普拉斯金字塔
 	Blend_Image result;
 	int a, j, i, c;
 
 //#pragma omp parallel for private(i, j, i, c, result)
 	Timer t1;
 	for(a = PYR_OCTAVE - 1; a > 0; a--) {
+		// todo 放大圖片
 		result = Bicubic(LS[a], transMat_2);
+		//WarpScale(LS[a], result, 2.0);
+		//Blend_to_imgraw(result).bmp("_overlap.bmp");
 
-		Blend_to_imgraw(LS[a]).bmp("overlap.bmp");
-		//WarpScale(LS[i], result, 2.0);
+
 		auto currW = LS[a - 1].width;
 		float* imgData = LS[a - 1].RGB;
 
@@ -831,9 +867,9 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 						imgData[(j*currW +i)*3 +c] = temp1 + temp2;
 
 						/*LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] = 
-							LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] < 0.f ? 
-								0.f : LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] > 255.f ? 
-								255.f : LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c];*/
+						LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] < 0.f ? 
+						0.f : LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c] > 255.f ? 
+						255.f : LS[i - 1].RGB[(j * LS[i - 1].width + i) * 3 + c];*/
 					}
 				}
 			}
@@ -842,11 +878,12 @@ void multiBandBlend(Raw &limg, Raw &rimg, int dx, int dy)
 	t1.print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 
 	result = LS[0];
+	Blend_to_imgraw(LS[0]).bmp("overlap.bmp");
 
 
 
-	//Blend_to_imgraw(LS[0]).bmp("overlap.bmp");
-
+	//============================================================
+	// 把混好的重疊區塞回原圖
 	blendImg(limg, result, dx, dy, LEFT, bol, bor);
 	blendImg(rimg, result, dx, dy, RIGHT, bol, bor);
 }
@@ -1046,7 +1083,7 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 				warpImg2[j*warpImg2.width*3 + i*3+1] == 0 and
 				warpImg2[j*warpImg2.width*3 + i*3+2] == 0)
 			{
-				// 這裡要補原圖i的.
+				// 這裡要補原圖j的.
 				matchImg[j*matchImg.width*3 + i*3+0] = img1[j*img1.width*3 + i*3+0];
 				matchImg[j*matchImg.width*3 + i*3+1] = img1[j*img1.width*3 + i*3+1];
 				matchImg[j*matchImg.width*3 + i*3+2] = img1[j*img1.width*3 + i*3+2];
@@ -1104,18 +1141,30 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 	//-------------------------------------------------------------------------
 	// Blend 多頻段混合(0.275s)
 	for(int num = 0; num < warpingImg.size() - 1; num++) {
-		if(Align_dy[num] > warpingImg[num].getRow()) { // 假如 y 的偏移量大於圖片高
+		int xMove , yMove;
+		int xM, yM;
+		
+		// 假如 y 的偏移量大於圖片高
+		if(Align_dy[num] > warpingImg[num].getRow()) {
 			int dyy = -(warpingImg[num].getRow() - abs(warpingImg[num].getRow() - Align_dy[num]));
-			cout << "dy--->dyy = " << Align_dy[num] << ", " << dyy << endl;
-			multiBandBlend(warpingImg[num], warpingImg[num + 1], Align_dx[num], dyy);
+			xMove = Align_dx[num];
+			yMove = dyy;
+
+			xM = warpingImg[num].getCol() - xMove;
+			yM = -warpingImg[num].getRow() - yMove;
 		} else { // 通常情況
-			cout << "dy-> = " << Align_dx[num] << ", " << Align_dy[num] << endl;
-			multiBandBlend(warpingImg[num], warpingImg[num + 1], Align_dx[num], Align_dy[num]);
+			xMove = Align_dx[num];
+			yMove = Align_dy[num];
+
+			xM = warpingImg[num].getCol() - xMove;
+			yM = warpingImg[num].getRow() - yMove;
 		}
+		cout << "(x, y)Move = " << xM << ", " << yM << endl;
+		multiBandBlend(warpingImg[num], warpingImg[num + 1], xMove, yMove);
 	}
 	// 輸出混合後的個別兩張圖.
-	 //raw_to_imgraw(warpingImg[0]).bmp("_WarpBlend1.bmp");
-	 //raw_to_imgraw(warpingImg[1]).bmp("_WarpBlend2.bmp");
+	//raw_to_imgraw(warpingImg[0]).bmp("_WarpBlend1.bmp");
+	//raw_to_imgraw(warpingImg[1]).bmp("_WarpBlend2.bmp");
 
 	Timer tt1;
 
@@ -1294,418 +1343,418 @@ void blen2img(const ImgRaw& img1, const ImgRaw& img2,
 /* todo 這個或許可以看拉普斯金字塔怎麼做的
 vector<unsigned char> MultiBandBlending(vector<unsigned char> left, vector<unsigned char> right, int width, int height)
 {
-	int Col = width;
-	int Row = height;
-	vector<unsigned char> I(Col * Row * 3, 0);
-	vector<bool> R(Col * Row, false);
-	int o = 0, i = 0, j = 0;
-	//----------------------------------------
-	// bicubic 倍率矩陣 X.Y.Z
-	float transMat_2[3][3] = { { 2.0f, 0.f, 0.f },{ 0.f, 2.0f, 0.f },{ 0.f, 0.f, 1.f } };
-	float transMat_0_5[3][3] = { { 0.5f, 0.f, 0.f },{ 0.f, 0.5f, 0.f },{ 0.f, 0.f, 1.f } };
-	//----------------------------------------
-	// 取出重疊區塊
-	vector<struct X_S> M(Row);
-	vector<struct X_S> U(Col);
-	int L_x = INT_MAX, R_x = INT_MIN;
-	int U_y = INT_MAX, D_y = INT_MIN;
-	for (i = 0; i < Row; ++i)
-	{
-		for (j = 0; j < Col; j++)
-		{
-			if ((left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0) &&
-				(right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0))
-			{
-				right[(i * Col + j) * 3 + 0] = 0;
-				right[(i * Col + j) * 3 + 1] = 0;
-				right[(i * Col + j) * 3 + 2] = 0;
-				M[i].m = j + 1;
-				break;
-			}
-		}
-		for (j = Col - 1; j >= 0; j--)
-		{
-			if ((left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0) &&
-				(right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0))
-			{
-				left[(i * Col + j) * 3 + 0] = 0;
-				left[(i * Col + j) * 3 + 1] = 0;
-				left[(i * Col + j) * 3 + 2] = 0;
-				M[i].n = j - 1;
-				break;
-			}
-		}
-		if (M[i].m == 0 && M[i].n == 0)
-		{
-			M[i].l = 0;
-			M[i].middle = 0;
-		}
-		else
-		{
-			M[i].middle = (M[i].m + M[i].n) / 2;
-			M[i].l = M[i].n - M[i].m + 1;
-			if (M[i].m < L_x)
-			{
-				L_x = M[i].m;
-			}
-			if (M[i].n > R_x)
-			{
-				R_x = M[i].n;
-			}
-			if (i < U_y)
-			{
-				U_y = i;
-			}
-			D_y = i;
-		}
-	}
-	for (j = 0; j < Col; j++)
-	{
-		for (i = 0; i < Row; ++i)
-		{
-			if (left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0)
-			{
-				left[(i * Col + j) * 3 + 0] = 0;
-				left[(i * Col + j) * 3 + 1] = 0;
-				left[(i * Col + j) * 3 + 2] = 0;
-				break;
-			}
-		}
-		for (i = 0; i < Row; ++i)
-		{
-			if (right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0)
-			{
-				right[(i * Col + j) * 3 + 0] = 0;
-				right[(i * Col + j) * 3 + 1] = 0;
-				right[(i * Col + j) * 3 + 2] = 0;
-				break;
-			}
-		}
-		for (i = Row - 1; i >= 0; --i)
-		{
-			if (left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0)
-			{
-				left[(i * Col + j) * 3 + 0] = 0;
-				left[(i * Col + j) * 3 + 1] = 0;
-				left[(i * Col + j) * 3 + 2] = 0;
-				break;
-			}
-		}
-		for (i = Row - 1; i >= 0; --i)
-		{
-			if (right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0)
-			{
-				right[(i * Col + j) * 3 + 0] = 0;
-				right[(i * Col + j) * 3 + 1] = 0;
-				right[(i * Col + j) * 3 + 2] = 0;
-				break;
-			}
-		}
-	}
-	//----------------------------------------
-	// 依照階層等比縮小，因為size可能為奇數會造成誤差，所以將重疊區域先放大到 octave^2
-	// 空白地方補最後一點像素
-	int size_a = (int)pow(2.f, PYR_OCTAVE);
-	int re_Col = (R_x - L_x + 1) % size_a == 0 ? (R_x - L_x + 1) : ((R_x - L_x + 1) / size_a + 1) * size_a;
-	//int re_Row = Row % size_a == 0 ? Row : (Row / size_a + 1) * size_a;
-	int re_Row = (D_y - U_y + 1) % size_a == 0 ? (D_y - U_y + 1) : ((D_y - U_y + 1) / size_a + 1) * size_a;
-	//----------------------------------------
-	Blend_Image left_t, right_t;
-	//----------------------------------------
-	//left
-	left_t.width = re_Col;
-	left_t.height = re_Row;
-	left_t.RGB = new float[left_t.width * left_t.height * 3];
-	//----------------------------------------
-	//right
-	right_t.width = re_Col;
-	right_t.height = re_Row;
-	right_t.RGB = new float[right_t.width * right_t.height * 3];
-	//----------------------------------------
-	//歸0
-	for (i = 0; i < re_Col * re_Row; ++i)
-	{
-		left_t.RGB[i * 3 + 0] = 0.f;
-		left_t.RGB[i * 3 + 1] = 0.f;
-		left_t.RGB[i * 3 + 2] = 0.f;
-		right_t.RGB[i * 3 + 0] = 0.f;
-		right_t.RGB[i * 3 + 1] = 0.f;
-		right_t.RGB[i * 3 + 2] = 0.f;
-	}
-	//----------------------------------------
-	// 取出重疊的地方
-	for (i = U_y; i < U_y + re_Row; i++)
-	{
-		for (j = L_x; j < L_x + re_Col; j++)
-		{
-			left_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 0] = (float)left[(i * Col + j) * 3 + 0];
-			left_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 1] = (float)left[(i * Col + j) * 3 + 1];
-			left_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 2] = (float)left[(i * Col + j) * 3 + 2];
+int Col = width;
+int Row = height;
+vector<unsigned char> I(Col * Row * 3, 0);
+vector<bool> R(Col * Row, false);
+int o = 0, i = 0, j = 0;
+//----------------------------------------
+// bicubic 倍率矩陣 X.Y.Z
+float transMat_2[3][3] = { { 2.0f, 0.f, 0.f },{ 0.f, 2.0f, 0.f },{ 0.f, 0.f, 1.f } };
+float transMat_0_5[3][3] = { { 0.5f, 0.f, 0.f },{ 0.f, 0.5f, 0.f },{ 0.f, 0.f, 1.f } };
+//----------------------------------------
+// 取出重疊區塊
+vector<struct X_S> M(Row);
+vector<struct X_S> U(Col);
+int L_x = INT_MAX, R_x = INT_MIN;
+int U_y = INT_MAX, D_y = INT_MIN;
+for (i = 0; i < Row; ++i)
+{
+for (j = 0; j < Col; j++)
+{
+if ((left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0) &&
+(right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0))
+{
+right[(i * Col + j) * 3 + 0] = 0;
+right[(i * Col + j) * 3 + 1] = 0;
+right[(i * Col + j) * 3 + 2] = 0;
+M[i].m = j + 1;
+break;
+}
+}
+for (j = Col - 1; j >= 0; j--)
+{
+if ((left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0) &&
+(right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0))
+{
+left[(i * Col + j) * 3 + 0] = 0;
+left[(i * Col + j) * 3 + 1] = 0;
+left[(i * Col + j) * 3 + 2] = 0;
+M[i].n = j - 1;
+break;
+}
+}
+if (M[i].m == 0 && M[i].n == 0)
+{
+M[i].l = 0;
+M[i].middle = 0;
+}
+else
+{
+M[i].middle = (M[i].m + M[i].n) / 2;
+M[i].l = M[i].n - M[i].m + 1;
+if (M[i].m < L_x)
+{
+L_x = M[i].m;
+}
+if (M[i].n > R_x)
+{
+R_x = M[i].n;
+}
+if (i < U_y)
+{
+U_y = i;
+}
+D_y = i;
+}
+}
+for (j = 0; j < Col; j++)
+{
+for (i = 0; i < Row; ++i)
+{
+if (left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0)
+{
+left[(i * Col + j) * 3 + 0] = 0;
+left[(i * Col + j) * 3 + 1] = 0;
+left[(i * Col + j) * 3 + 2] = 0;
+break;
+}
+}
+for (i = 0; i < Row; ++i)
+{
+if (right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0)
+{
+right[(i * Col + j) * 3 + 0] = 0;
+right[(i * Col + j) * 3 + 1] = 0;
+right[(i * Col + j) * 3 + 2] = 0;
+break;
+}
+}
+for (i = Row - 1; i >= 0; --i)
+{
+if (left[(i * Col + j) * 3 + 0] != 0 || left[(i * Col + j) * 3 + 1] != 0 || left[(i * Col + j) * 3 + 2] != 0)
+{
+left[(i * Col + j) * 3 + 0] = 0;
+left[(i * Col + j) * 3 + 1] = 0;
+left[(i * Col + j) * 3 + 2] = 0;
+break;
+}
+}
+for (i = Row - 1; i >= 0; --i)
+{
+if (right[(i * Col + j) * 3 + 0] != 0 || right[(i * Col + j) * 3 + 1] != 0 || right[(i * Col + j) * 3 + 2] != 0)
+{
+right[(i * Col + j) * 3 + 0] = 0;
+right[(i * Col + j) * 3 + 1] = 0;
+right[(i * Col + j) * 3 + 2] = 0;
+break;
+}
+}
+}
+//----------------------------------------
+// 依照階層等比縮小，因為size可能為奇數會造成誤差，所以將重疊區域先放大到 octave^2
+// 空白地方補最後一點像素
+int size_a = (int)pow(2.f, PYR_OCTAVE);
+int re_Col = (R_x - L_x + 1) % size_a == 0 ? (R_x - L_x + 1) : ((R_x - L_x + 1) / size_a + 1) * size_a;
+//int re_Row = Row % size_a == 0 ? Row : (Row / size_a + 1) * size_a;
+int re_Row = (D_y - U_y + 1) % size_a == 0 ? (D_y - U_y + 1) : ((D_y - U_y + 1) / size_a + 1) * size_a;
+//----------------------------------------
+Blend_Image left_t, right_t;
+//----------------------------------------
+//left
+left_t.width = re_Col;
+left_t.height = re_Row;
+left_t.RGB = new float[left_t.width * left_t.height * 3];
+//----------------------------------------
+//right
+right_t.width = re_Col;
+right_t.height = re_Row;
+right_t.RGB = new float[right_t.width * right_t.height * 3];
+//----------------------------------------
+//歸0
+for (i = 0; i < re_Col * re_Row; ++i)
+{
+left_t.RGB[i * 3 + 0] = 0.f;
+left_t.RGB[i * 3 + 1] = 0.f;
+left_t.RGB[i * 3 + 2] = 0.f;
+right_t.RGB[i * 3 + 0] = 0.f;
+right_t.RGB[i * 3 + 1] = 0.f;
+right_t.RGB[i * 3 + 2] = 0.f;
+}
+//----------------------------------------
+// 取出重疊的地方
+for (i = U_y; i < U_y + re_Row; i++)
+{
+for (j = L_x; j < L_x + re_Col; j++)
+{
+left_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 0] = (float)left[(i * Col + j) * 3 + 0];
+left_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 1] = (float)left[(i * Col + j) * 3 + 1];
+left_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 2] = (float)left[(i * Col + j) * 3 + 2];
 
-			right_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 0] = (float)right[(i * Col + j) * 3 + 0];
-			right_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 1] = (float)right[(i * Col + j) * 3 + 1];
-			right_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 2] = (float)right[(i * Col + j) * 3 + 2];
-		}
-	}
-	int ur = 0, dr = 0;
-	int set_r = 1;
+right_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 0] = (float)right[(i * Col + j) * 3 + 0];
+right_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 1] = (float)right[(i * Col + j) * 3 + 1];
+right_t.RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 2] = (float)right[(i * Col + j) * 3 + 2];
+}
+}
+int ur = 0, dr = 0;
+int set_r = 1;
 
-	for (j = 0; j < re_Col; j++)
-	{
-		for (i = 0; i < re_Row; i++)
-		{
-			if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				ur = i;
-				break;
-			}
-		}
-		for (i = ur; i >= 0; i--)
-		{
-			left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[((ur + set_r) * re_Col + j) * 3 + 0];
-			left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[((ur + set_r) * re_Col + j) * 3 + 1];
-			left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[((ur + set_r) * re_Col + j) * 3 + 2];
-		}
-		for (i = re_Row - 1; i >= 0; i--)
-		{
-			if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				dr = i;
-				break;
-			}
-		}
-		for (i = dr; i < re_Row; i++)
-		{
-			left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[((dr - set_r) * re_Col + j) * 3 + 0];
-			left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[((dr - set_r) * re_Col + j) * 3 + 1];
-			left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[((dr - set_r) * re_Col + j) * 3 + 2];
-		}
-		//-------------------------------------------------------------------------------------------------------------------------------------------------
-		for (i = 0; i < re_Row; i++)
-		{
-			if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				ur = i;
-				break;
-			}
-		}
-		for (i = ur; i >= 0; i--)
-		{
-			right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[((ur + set_r) * re_Col + j) * 3 + 0];
-			right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[((ur + set_r) * re_Col + j) * 3 + 1];
-			right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[((ur + set_r) * re_Col + j) * 3 + 2];
-		}
-		for (i = re_Row - 1; i >= 0; i--)
-		{
-			if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				dr = i;
-				break;
-			}
-		}
-		for (i = dr; i < re_Row; i++)
-		{
-			right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[((dr - set_r) * re_Col + j) * 3 + 0];
-			right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[((dr - set_r) * re_Col + j) * 3 + 1];
-			right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[((dr - set_r) * re_Col + j) * 3 + 2];
-		}
-	}
-	for (i = 0; i < re_Row; i++)
-	{
-		for (j = 0; j < re_Col; j++)
-		{
-			if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				ur = j;
-				break;
-			}
-		}
-		for (j = ur; j >= 0; j--)
-		{
-			left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 0];
-			left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 1];
-			left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 2];
-		}
-		for (j = re_Col - 1; j >= 0; j--)
-		{
-			if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				dr = j;
-				break;
-			}
-		}
-		for (j = dr; j < re_Col; j++)
-		{
-			left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 0];
-			left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 1];
-			left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 2];
-		}
-		//-------------------------------------------------------------------------------------------------------------------------------------------------
-		for (j = 0; j < re_Col; j++)
-		{
-			if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				ur = j;
-				break;
-			}
-		}
-		for (j = ur; j >= 0; j--)
-		{
-			right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 0];
-			right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 1];
-			right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 2];
-		}
-		for (j = re_Col - 1; j >= 0; j--)
-		{
-			if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
-			{
-				dr = j;
-				break;
-			}
-		}
-		for (j = dr; j < re_Col; j++)
-		{
-			right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 0];
-			right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 1];
-			right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 2];
-		}
-	}
+for (j = 0; j < re_Col; j++)
+{
+for (i = 0; i < re_Row; i++)
+{
+if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+ur = i;
+break;
+}
+}
+for (i = ur; i >= 0; i--)
+{
+left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[((ur + set_r) * re_Col + j) * 3 + 0];
+left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[((ur + set_r) * re_Col + j) * 3 + 1];
+left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[((ur + set_r) * re_Col + j) * 3 + 2];
+}
+for (i = re_Row - 1; i >= 0; i--)
+{
+if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+dr = i;
+break;
+}
+}
+for (i = dr; i < re_Row; i++)
+{
+left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[((dr - set_r) * re_Col + j) * 3 + 0];
+left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[((dr - set_r) * re_Col + j) * 3 + 1];
+left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[((dr - set_r) * re_Col + j) * 3 + 2];
+}
+//-------------------------------------------------------------------------------------------------------------------------------------------------
+for (i = 0; i < re_Row; i++)
+{
+if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+ur = i;
+break;
+}
+}
+for (i = ur; i >= 0; i--)
+{
+right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[((ur + set_r) * re_Col + j) * 3 + 0];
+right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[((ur + set_r) * re_Col + j) * 3 + 1];
+right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[((ur + set_r) * re_Col + j) * 3 + 2];
+}
+for (i = re_Row - 1; i >= 0; i--)
+{
+if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+dr = i;
+break;
+}
+}
+for (i = dr; i < re_Row; i++)
+{
+right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[((dr - set_r) * re_Col + j) * 3 + 0];
+right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[((dr - set_r) * re_Col + j) * 3 + 1];
+right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[((dr - set_r) * re_Col + j) * 3 + 2];
+}
+}
+for (i = 0; i < re_Row; i++)
+{
+for (j = 0; j < re_Col; j++)
+{
+if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+ur = j;
+break;
+}
+}
+for (j = ur; j >= 0; j--)
+{
+left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 0];
+left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 1];
+left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 2];
+}
+for (j = re_Col - 1; j >= 0; j--)
+{
+if (left_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || left_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+dr = j;
+break;
+}
+}
+for (j = dr; j < re_Col; j++)
+{
+left_t.RGB[(i * re_Col + j) * 3 + 0] = left_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 0];
+left_t.RGB[(i * re_Col + j) * 3 + 1] = left_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 1];
+left_t.RGB[(i * re_Col + j) * 3 + 2] = left_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 2];
+}
+//-------------------------------------------------------------------------------------------------------------------------------------------------
+for (j = 0; j < re_Col; j++)
+{
+if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+ur = j;
+break;
+}
+}
+for (j = ur; j >= 0; j--)
+{
+right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 0];
+right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 1];
+right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[(i * re_Col + (ur + set_r)) * 3 + 2];
+}
+for (j = re_Col - 1; j >= 0; j--)
+{
+if (right_t.RGB[(i * re_Col + j) * 3 + 0] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 1] != 0.f || right_t.RGB[(i * re_Col + j) * 3 + 2] != 0.f)
+{
+dr = j;
+break;
+}
+}
+for (j = dr; j < re_Col; j++)
+{
+right_t.RGB[(i * re_Col + j) * 3 + 0] = right_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 0];
+right_t.RGB[(i * re_Col + j) * 3 + 1] = right_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 1];
+right_t.RGB[(i * re_Col + j) * 3 + 2] = right_t.RGB[(i * re_Col + (dr - set_r)) * 3 + 2];
+}
+}
 
-	// 建立高斯層
-	vector<Blend_Image> L_G(PYR_OCTAVE), R_G(PYR_OCTAVE);
-	//----------------------------------------
-	// 第0層為原圖
-	L_G[0] = left_t;
-	R_G[0] = right_t;
-	//----------------------------------------
-	// 其餘圖層為，第0層高斯後縮小兩倍
-	float sigma = sqrt((-1) * pow(2.f, 2.f) / (2.f * log(0.5f)));
-	for (i = 1; i < PYR_OCTAVE; i++)
-	{
-		L_G[i] = Bicubic(BlurImage(L_G[i - 1], sigma, PYR_R), transMat_0_5);
-		R_G[i] = Bicubic(BlurImage(R_G[i - 1], sigma, PYR_R), transMat_0_5);
-	}
+// 建立高斯層
+vector<Blend_Image> L_G(PYR_OCTAVE), R_G(PYR_OCTAVE);
+//----------------------------------------
+// 第0層為原圖
+L_G[0] = left_t;
+R_G[0] = right_t;
+//----------------------------------------
+// 其餘圖層為，第0層高斯後縮小兩倍
+float sigma = sqrt((-1) * pow(2.f, 2.f) / (2.f * log(0.5f)));
+for (i = 1; i < PYR_OCTAVE; i++)
+{
+L_G[i] = Bicubic(BlurImage(L_G[i - 1], sigma, PYR_R), transMat_0_5);
+R_G[i] = Bicubic(BlurImage(R_G[i - 1], sigma, PYR_R), transMat_0_5);
+}
 
-	//----------------------------------------
-	// 建立 L 層
-	vector<Blend_Image> L_L(PYR_OCTAVE), R_L(PYR_OCTAVE);
-	//----------------------------------------
-	// 最高層為彩色資訊，其餘階層為邊界資訊
-	for (i = 0; i < PYR_OCTAVE - 1; i++)
-	{
-		L_L[i] = sub(L_G[i], Bicubic(L_G[i + 1], transMat_2));
-		R_L[i] = sub(R_G[i], Bicubic(R_G[i + 1], transMat_2));
-	}
-	L_L[PYR_OCTAVE - 1] = L_G[PYR_OCTAVE - 1];
-	R_L[PYR_OCTAVE - 1] = R_G[PYR_OCTAVE - 1];
-	//----------------------------------------
-	// 將兩個重疊區塊的 L 層作結合，邊界資訊從中心點切開各占一半
-	// 色彩資訊依照高斯權重做分配，高斯 kernel 為寬度大小
-	vector<Blend_Image> L_T(PYR_OCTAVE);
-	vector<float> kernel = getGaussianKernel(L_L[PYR_OCTAVE - 1].width);
-	int middle = 0;
+//----------------------------------------
+// 建立 L 層
+vector<Blend_Image> L_L(PYR_OCTAVE), R_L(PYR_OCTAVE);
+//----------------------------------------
+// 最高層為彩色資訊，其餘階層為邊界資訊
+for (i = 0; i < PYR_OCTAVE - 1; i++)
+{
+L_L[i] = sub(L_G[i], Bicubic(L_G[i + 1], transMat_2));
+R_L[i] = sub(R_G[i], Bicubic(R_G[i + 1], transMat_2));
+}
+L_L[PYR_OCTAVE - 1] = L_G[PYR_OCTAVE - 1];
+R_L[PYR_OCTAVE - 1] = R_G[PYR_OCTAVE - 1];
+//----------------------------------------
+// 將兩個重疊區塊的 L 層作結合，邊界資訊從中心點切開各占一半
+// 色彩資訊依照高斯權重做分配，高斯 kernel 為寬度大小
+vector<Blend_Image> L_T(PYR_OCTAVE);
+vector<float> kernel = getGaussianKernel(L_L[PYR_OCTAVE - 1].width);
+int middle = 0;
 
-	for (o = 0; o < PYR_OCTAVE; o++)
-	{
-		L_T[o].width = L_L[o].width;
-		L_T[o].height = L_L[o].height;
-		L_T[o].RGB = new float[L_T[o].width * L_T[o].height * 3];
-		middle = L_T[o].width % 2 == 0 ? L_T[o].width / 2 + 1 : L_T[o].width / 2;
-		for (i = 0; i < L_T[o].height; ++i)
-		{
-			for (j = 0; j < L_T[o].width; ++j)
-			{
-				if (o == PYR_OCTAVE - 1)
-				{
-					L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = kernel[j] * L_L[o].RGB[(i * L_L[o].width + j) * 3 + 0] + (1.f - kernel[j]) * R_L[o].RGB[(i * R_L[o].width + j) * 3 + 0];
-					L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = kernel[j] * L_L[o].RGB[(i * L_L[o].width + j) * 3 + 1] + (1.f - kernel[j]) * R_L[o].RGB[(i * R_L[o].width + j) * 3 + 1];
-					L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = kernel[j] * L_L[o].RGB[(i * L_L[o].width + j) * 3 + 2] + (1.f - kernel[j]) * R_L[o].RGB[(i * R_L[o].width + j) * 3 + 2];
-				}
-				else
-				{
-					if (j < middle)
-					{
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = L_L[o].RGB[(i * L_L[o].width + j) * 3 + 0];
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = L_L[o].RGB[(i * L_L[o].width + j) * 3 + 1];
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = L_L[o].RGB[(i * L_L[o].width + j) * 3 + 2];
-					}
-					else if (j == middle)
-					{
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = (L_L[o].RGB[(i * L_L[o].width + j) * 3 + 0] + R_L[o].RGB[(i * R_L[o].width + j) * 3 + 0]) / 2;
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = (L_L[o].RGB[(i * L_L[o].width + j) * 3 + 1] + R_L[o].RGB[(i * R_L[o].width + j) * 3 + 1]) / 2;
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = (L_L[o].RGB[(i * L_L[o].width + j) * 3 + 2] + R_L[o].RGB[(i * R_L[o].width + j) * 3 + 2]) / 2;
-					}
-					else
-					{
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = R_L[o].RGB[(i * R_L[o].width + j) * 3 + 0];
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = R_L[o].RGB[(i * R_L[o].width + j) * 3 + 1];
-						L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = R_L[o].RGB[(i * R_L[o].width + j) * 3 + 2];
-					}
-				}
-			}
-		}
-	}
+for (o = 0; o < PYR_OCTAVE; o++)
+{
+L_T[o].width = L_L[o].width;
+L_T[o].height = L_L[o].height;
+L_T[o].RGB = new float[L_T[o].width * L_T[o].height * 3];
+middle = L_T[o].width % 2 == 0 ? L_T[o].width / 2 + 1 : L_T[o].width / 2;
+for (i = 0; i < L_T[o].height; ++i)
+{
+for (j = 0; j < L_T[o].width; ++j)
+{
+if (o == PYR_OCTAVE - 1)
+{
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = kernel[j] * L_L[o].RGB[(i * L_L[o].width + j) * 3 + 0] + (1.f - kernel[j]) * R_L[o].RGB[(i * R_L[o].width + j) * 3 + 0];
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = kernel[j] * L_L[o].RGB[(i * L_L[o].width + j) * 3 + 1] + (1.f - kernel[j]) * R_L[o].RGB[(i * R_L[o].width + j) * 3 + 1];
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = kernel[j] * L_L[o].RGB[(i * L_L[o].width + j) * 3 + 2] + (1.f - kernel[j]) * R_L[o].RGB[(i * R_L[o].width + j) * 3 + 2];
+}
+else
+{
+if (j < middle)
+{
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = L_L[o].RGB[(i * L_L[o].width + j) * 3 + 0];
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = L_L[o].RGB[(i * L_L[o].width + j) * 3 + 1];
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = L_L[o].RGB[(i * L_L[o].width + j) * 3 + 2];
+}
+else if (j == middle)
+{
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = (L_L[o].RGB[(i * L_L[o].width + j) * 3 + 0] + R_L[o].RGB[(i * R_L[o].width + j) * 3 + 0]) / 2;
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = (L_L[o].RGB[(i * L_L[o].width + j) * 3 + 1] + R_L[o].RGB[(i * R_L[o].width + j) * 3 + 1]) / 2;
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = (L_L[o].RGB[(i * L_L[o].width + j) * 3 + 2] + R_L[o].RGB[(i * R_L[o].width + j) * 3 + 2]) / 2;
+}
+else
+{
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 0] = R_L[o].RGB[(i * R_L[o].width + j) * 3 + 0];
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 1] = R_L[o].RGB[(i * R_L[o].width + j) * 3 + 1];
+L_T[o].RGB[(i * L_T[o].width + j) * 3 + 2] = R_L[o].RGB[(i * R_L[o].width + j) * 3 + 2];
+}
+}
+}
+}
+}
 
-	//----------------------------------------
-	// 還原金字塔，從最高層的色彩資訊依序放大累加邊界資訊，最底層為混合過後的結果
-	for (o = PYR_OCTAVE - 2; o >= 0; o--)
-	{
-		L_T[o] = add(L_T[o], Bicubic(L_T[o + 1], transMat_2));
-	}
-	//----------------------------------------
-	// 輸出最後結果，將為重疊的區塊補回
-	for (i = 0; i < Row; i++)
-	{
-		for (j = 0; j < Col; j++)
-		{
-			if ((left[(i * Col + j) * 3 + 0] == 0 && left[(i * Col + j) * 3 + 1] == 0 && left[(i * Col + j) * 3 + 2] == 0) ||
-				(right[(i * Col + j) * 3 + 0] == 0 && right[(i * Col + j) * 3 + 1] == 0 && right[(i * Col + j) * 3 + 2] == 0))
-			{
-				I[(i * Col + j) * 3 + 0] = left[(i * Col + j) * 3 + 0] + right[(i * Col + j) * 3 + 0];
-				I[(i * Col + j) * 3 + 1] = left[(i * Col + j) * 3 + 1] + right[(i * Col + j) * 3 + 1];
-				I[(i * Col + j) * 3 + 2] = left[(i * Col + j) * 3 + 2] + right[(i * Col + j) * 3 + 2];
-			}
-			else
-			{
-				I[(i * Col + j) * 3 + 0] = 255;
-				I[(i * Col + j) * 3 + 1] = 255;
-				I[(i * Col + j) * 3 + 2] = 255;
-			}
-		}
-	}
+//----------------------------------------
+// 還原金字塔，從最高層的色彩資訊依序放大累加邊界資訊，最底層為混合過後的結果
+for (o = PYR_OCTAVE - 2; o >= 0; o--)
+{
+L_T[o] = add(L_T[o], Bicubic(L_T[o + 1], transMat_2));
+}
+//----------------------------------------
+// 輸出最後結果，將為重疊的區塊補回
+for (i = 0; i < Row; i++)
+{
+for (j = 0; j < Col; j++)
+{
+if ((left[(i * Col + j) * 3 + 0] == 0 && left[(i * Col + j) * 3 + 1] == 0 && left[(i * Col + j) * 3 + 2] == 0) ||
+(right[(i * Col + j) * 3 + 0] == 0 && right[(i * Col + j) * 3 + 1] == 0 && right[(i * Col + j) * 3 + 2] == 0))
+{
+I[(i * Col + j) * 3 + 0] = left[(i * Col + j) * 3 + 0] + right[(i * Col + j) * 3 + 0];
+I[(i * Col + j) * 3 + 1] = left[(i * Col + j) * 3 + 1] + right[(i * Col + j) * 3 + 1];
+I[(i * Col + j) * 3 + 2] = left[(i * Col + j) * 3 + 2] + right[(i * Col + j) * 3 + 2];
+}
+else
+{
+I[(i * Col + j) * 3 + 0] = 255;
+I[(i * Col + j) * 3 + 1] = 255;
+I[(i * Col + j) * 3 + 2] = 255;
+}
+}
+}
 
-	for (i = U_y; i < U_y + re_Row; i++)
-	{
-		for (j = L_x; j < L_x + re_Col; j++)
-		{
-			if (I[(i * Col + j) * 3 + 0] == 255 && I[(i * Col + j) * 3 + 1] == 255 && I[(i * Col + j) * 3 + 2] == 255)
-			{
-				I[(i * Col + j) * 3 + 0] = (unsigned char)L_T[0].RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 0];
-				I[(i * Col + j) * 3 + 1] = (unsigned char)L_T[0].RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 1];
-				I[(i * Col + j) * 3 + 2] = (unsigned char)L_T[0].RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 2];
-			}
-		}
-	}
-	//RawToBmp("test", I, Col, Row);
-	//system("test.bmp");
-	//----------------------------------------
-	// 釋放記憶體
-	for (o = 0; o < PYR_OCTAVE; o++)
-	{
-		delete[] L_G[o].RGB;
-		delete[] R_G[o].RGB;
-		if (o != PYR_OCTAVE - 1)
-		{
-			delete[] L_L[o].RGB;
-			delete[] R_L[o].RGB;
-		}
-		delete[] L_T[o].RGB;
-	}
-	L_G.clear();
-	R_G.clear();
-	L_L.clear();
-	R_L.clear();
-	L_T.clear();
-	return I;
+for (i = U_y; i < U_y + re_Row; i++)
+{
+for (j = L_x; j < L_x + re_Col; j++)
+{
+if (I[(i * Col + j) * 3 + 0] == 255 && I[(i * Col + j) * 3 + 1] == 255 && I[(i * Col + j) * 3 + 2] == 255)
+{
+I[(i * Col + j) * 3 + 0] = (unsigned char)L_T[0].RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 0];
+I[(i * Col + j) * 3 + 1] = (unsigned char)L_T[0].RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 1];
+I[(i * Col + j) * 3 + 2] = (unsigned char)L_T[0].RGB[((i - U_y) * re_Col + (j - L_x)) * 3 + 2];
+}
+}
+}
+//RawToBmp("test", I, Col, Row);
+//system("test.bmp");
+//----------------------------------------
+// 釋放記憶體
+for (o = 0; o < PYR_OCTAVE; o++)
+{
+delete[] L_G[o].RGB;
+delete[] R_G[o].RGB;
+if (o != PYR_OCTAVE - 1)
+{
+delete[] L_L[o].RGB;
+delete[] R_L[o].RGB;
+}
+delete[] L_T[o].RGB;
+}
+L_G.clear();
+R_G.clear();
+L_L.clear();
+R_L.clear();
+L_T.clear();
+return I;
 }
 */

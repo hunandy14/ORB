@@ -46,6 +46,9 @@
     <Filter Include="來源檔案\ORB">
       <UniqueIdentifier>{b6c17fae-f977-43cd-a62c-c7e3c4b2ce57}</UniqueIdentifier>
     </Filter>
+    <Filter Include="自訂函式庫\WarpCyli">
+      <UniqueIdentifier>{2631c066-72c1-458e-bb64-fa876456c19e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

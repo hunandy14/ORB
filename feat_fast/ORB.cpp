@@ -205,7 +205,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	cout << "FAST corner 數量 = " << feat.len << endl;
 	vector<Point2f> corners;
 	
-	goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
+	goodFeaturesToTrack(gray, corners, 1500, 0.01, 10, mask, 3, true, 0.04);
 	
 
 	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
@@ -283,7 +283,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 		}
 		// 加入匹配點
 		//cout << "dist=" << dist << endl;
-		if(dist > 24 /*or
+		if(dist > 16 /*or
 					 abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
 		{
 			feat1.feat_match[j].x = -1;

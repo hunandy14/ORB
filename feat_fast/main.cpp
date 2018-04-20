@@ -29,8 +29,8 @@ int main(int argc, char const *argv[]) {
 #ifdef harrisTest
 	opencvHarris3();
 #else
-	string name1 = "sc02.bmp", name2= "sc03.bmp";
-	//string name1 = "b01.bmp", name2= "b02.bmp";
+	//string name1 = "sc02.bmp", name2= "sc03.bmp";
+	string name1 = "ball_01.bmp", name2= "ball_02.bmp";
 	// 開圖
 	ImgRaw img1(name1, "", 0);
 	ImgRaw img1_gray = img1.ConverGray();
