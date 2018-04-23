@@ -1,4 +1,4 @@
-/*****************************************************************
+ï»¿/*****************************************************************
 Name : 
 Date : 2018/03/01
 By   : CharlotteHonG
@@ -46,14 +46,14 @@ public:
 		return len;
 	}
 	void resize(int size){
-		// «Ø¥ß·sªÅ¶¡
+		// å»ºç«‹æ–°ç©ºé–“
 		xy* temp = new xy[size];
-		// ½Æ»s¨ì·sªÅ¶¡
+		// è¤‡è£½åˆ°æ–°ç©ºé–“
 		//copy_n(feat, size<len? size: len, temp);
 		for(size_t i = 0; i < size<len? size: len; i++) {
 			temp[i] = feat[i];
 		}
-		// ¨ú¥NÂÂªÅ¶¡
+		// å–ä»£èˆŠç©ºé–“
 		this->~Feat();
 		len = size;
 		feat = temp;
