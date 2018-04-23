@@ -46,7 +46,7 @@ public:
 		return len;
 	}
 	void resize(int size){
-		// 建立心空間
+		// 建立新空間
 		xy* temp = new xy[size];
 		// 複製到新空間
 		//copy_n(feat, size<len? size: len, temp);
