@@ -173,21 +173,17 @@ static void desc_ORB(const ImgRaw& img, Feat& feat) {
 	feat.bin = std::move(bin);
 }
 void create_ORB(const ImgRaw& img, Feat& feat) {
-	// FAST特徵點
+// FAST特徵點 ---> 8~10ms
 	fast(img, feat);
-	// Harris過濾角點
-	//harris_coners(img, feat);
 
-
-
+	
+// 初始化mask --- >0ms
 	Mat image(img.height, img.width, CV_32F, (void*)img.raw_img.data());
 	Mat gray=image;
-	// 初始化mask
 	Mat mask(Mat::zeros(Size(img.width, img.height),CV_8U));
 	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
 	// 把 feat 的 xy 轉到 mask
 	int edg=3+20;
-
 	for(int i = 0; i < feat.len; i++) {
 		//idx = (feat.feat->y)*image.rows + (feat.feat->x);
 		int x=feat[i].x;
@@ -200,17 +196,17 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 			mask.at<uchar>(pt) = 255;
 		}
 	}
-
 	//cout << "FAST corner 數量 = " << feat.len << endl;
-	vector<Point2f> corners;
-	
-	goodFeaturesToTrack2(gray, corners, 1500, 0.01, 10, mask, 3, 3, true, 0.04);
 	
 
+// Herris 過濾 --> 8~10ms	
+	vector<Point2f> corners;
+	goodFeaturesToTrack2(gray, corners, 500, 0.01, 10, mask, 3, 3, true, 0.04); // 8~10ms
 	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
 	//cout << "Harris corner 數量 = " << corners.size() << endl;
 
-	// 回填 xy 位置
+
+// 回填 xy 位置 ---> 0ms
 	int newLen=0;
 	for(int i = 0; i < corners.size(); i++) {
 		int x=corners[i].x;
@@ -226,7 +222,6 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		newLen++;
 	}
 	feat.len=corners.size();
-
 	/*
 	RNG rng(12345);
 	image = imread("sc02.bmp");
@@ -241,20 +236,18 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	*/
 
 
-
-
-	// 灰度重心法
+// 灰度重心法 ---> 0ms
 	GrayCenterOfMass(img, feat, 3);
 
-	//ImgRaw temp = img;
-	//for(size_t i = 0; i < feat.size(); i++) {
-		//Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
-	//}
-	//static int num=0;
-	//temp.bmp("arrow"+to_string(num++)+".bmp");
+	/*ImgRaw temp = img;
+	for(size_t i = 0; i < feat.size(); i++) {
+		Draw::draw_arrow(temp, feat[i].y, feat[i].x, 20, feat.sita[i]);
+	}
+	static int num=0;
+	temp.bmp("arrow"+to_string(num++)+".bmp");*/
 
 
-	// 描述特徵
+// 描述特徵 ---> 5~6ms
 	desc_ORB(img, feat);
 }
 

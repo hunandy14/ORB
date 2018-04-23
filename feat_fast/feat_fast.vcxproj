@@ -104,6 +104,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)\ImgRaw;$(ProjectDir)\harris_coners;$(ProjectDir);$(ProjectDir)\feat;$(ProjectDir)\ImgRaw\Raw2Img;$(ProjectDir)\LapBlend</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

@@ -102,8 +102,9 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 	};
 	//------------------------------------------------------------------------
 	Timer t1;
+	// todo 這裡就浪費6毫秒
 	Raw img1=imgraw_to_raw(imgA), img2=imgraw_to_raw(imgB);
-	t1.print("這裡就浪費6毫秒");
+	//t1.print("這裡就浪費6毫秒");
 
 	int cal_dx = 0;
 	int cal_dy = 0;

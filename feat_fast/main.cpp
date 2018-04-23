@@ -17,52 +17,46 @@ using namespace cv;
 #include "opencvTest.hpp"
 #include "ORB.hpp"
 
-//====================================================================================
-int main(int argc, char const *argv[]) {
-	//#define harrisTest
-#ifdef harrisTest
-	opencvHarris3();
-#else
-	string name1 = "srcImg\\sc02.bmp", name2= "srcImg\\sc03.bmp";
-	//string name1 = "srcImg\\ball_01.bmp", name2= "srcImg\\ball_02.bmp";
+
+void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool autoname=0) {
 	// 開圖
 	ImgRaw img1(name1, "", 0);
 	ImgRaw img1_gray = img1.ConverGray();
 	img1_gray.nomal=0;
-	basic_ImgData warpL, warpR, lapblend;
-	ImgRaw imgL(name1);
-	ImgRaw imgR(name2);
-	// 開圖
 	ImgRaw img2(name2, "", 0);
 	ImgRaw img2_gray = img2.ConverGray();
 	img2_gray.nomal=0;
+
+	ImgRaw stackImg = imgMerge(img1, img2);
+
+	ImgRaw imgL(name1);
+	ImgRaw imgR(name2);
+
+	basic_ImgData warpL, warpR, lapblend;
 	ImgData_read(warpL, name1);
 	ImgData_read(warpR, name2);
-
-
 	//====================================================================================
-	Timer total, t1;
-	t1.priSta=1;
+	//Timer t1;
+	Timer total;
+	//t1.priSta=1;
 	// ORB
 	Feat feat, feat2;
-	t1.start();
-	create_ORB(img1_gray, feat);
-	t1.print(" create_ORB1"); // 0.274
-	cout << "===============" << endl;
-	t1.start();
+	create_ORB(img1_gray, feat); // 0.25ms
+	//t1.print(" create_ORB1");
+
+	//t1.start();
 	create_ORB(img2_gray, feat2);
-	t1.print(" create_ORB2"); // 0.274
-	// 尋找配對點
+	//t1.print(" create_ORB2"); // 0.25ms
+							  // 尋找配對點
 	vector<float> HomogMat;
-	t1.start();
+	//t1.start();
 	matchORB(feat2, feat, HomogMat);
-	t1.print(" matchORB"); // 0.006
+	//t1.print(" matchORB"); // 0.006
+
 	// 測試配對點
-	//ImgRaw stackImg = imgMerge(img1, img2);
 	//stackImg.bmp("merge.bmp");
 	//featDrawLine("line.bmp", stackImg, feat2);
 
-	cout << "=======================================" << endl;
 	// 縫合圖片
 	size_t RANSAC_num=0;
 	Feature** RANSAC_feat=nullptr;
@@ -73,22 +67,43 @@ int main(int argc, char const *argv[]) {
 
 	// 獲得偏差值
 	int mx=0, my=0; float ft=0;
-	t1.start();
+	//t1.start();
 	ft = getWarpFocal(HomogMat, imgL.size(), imgR.size());
-	t1.print(" getWarpFocal"); // 0
-	t1.start();
+	//t1.print(" getWarpFocal"); // 0
+	//t1.start();
 	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, ft);
-	t1.print(" getWarpOffset"); // 0.13
-	//cout << "ft=" << ft << ", Offset(" << mx << ", " << my << ")" << endl;
+	//t1.print(" getWarpOffset"); // 0.13
+	cout << "ft=" << ft << ", Ax=" << mx << ", Ay=" << my << ";" << endl;
 	//====================================================================================
-	t1.start();
+	//t1.start();
 	LapBlender(lapblend, warpL, warpR, ft, mx, my);
-	t1.print(" LapBlender"); // 0.022
-	cout << "=======================================" << endl;
-	total.print("#### total time"); //0.093
-	ImgData_write(lapblend, "__lapBlend.bmp");
+	//t1.print(" LapBlender"); // 0.022
+	//cout << "=======================================" << endl;
+	total.print("# total time"); //0.093
 
-#endif // harrisTest
+
+	static int num=0;
+	if (autoname) {
+		outName = outName+to_string(num++)+".bmp";
+		cout << outName << endl;
+		ImgData_write(lapblend, outName);
+	}
+	else {
+		ImgData_write(lapblend, outName);
+	}
+}
+//====================================================================================
+int main(int argc, char const *argv[]) {
+	//imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
+	//imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
+
+	imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
+	/*imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2950.bmp", "data\\DSC_2951.bmp", "resultImg\\blend", 1);*/
 	return 0;
 }
 //====================================================================================
