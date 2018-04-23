@@ -1,4 +1,4 @@
-/*****************************************************************
+ï»¿/*****************************************************************
 Name : ORB
 Date : 2018/03/01
 By   : CharlotteHonG
@@ -20,10 +20,8 @@ using namespace cv;
 #include "ORB_bit_pattern_31_.hpp"
 #include "opencvTest.hpp"
 
-
-//#include "stitch\imagedata.hpp"
-//#include "stitch\Blend.hpp"
 #include "ORB.hpp"
+
 //====================================================================================
 void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	ImgRaw temp = img;
@@ -34,7 +32,7 @@ void outFeat2bmp(string name, const ImgRaw& img, const Feat& feat) {
 	}
 	temp.bmp(name);
 }
-// ¦Ç«×½è¤ßªk
+// ç°åº¦è³ªå¿ƒæ³•
 static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	vector<double> feat_sita(feat.size());
 
@@ -50,7 +48,7 @@ static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 					(thisy < 0.0 or thisy >= img.height)) {
 					cout << "thisx=" << thisx << endl;
 					cout << "thisy=" << thisy << endl;
-					//throw out_of_range("¥X²{­t¸¹");
+					//throw out_of_range("å‡ºç¾è² è™Ÿ");
 				} else {
 					m10 += i * img[posi];
 					m01 += j * img[posi];
@@ -65,18 +63,18 @@ static void GrayCenterOfMass(const ImgRaw& img, Feat& feat, int radius) {
 	feat.sita = std::move(feat_sita);
 }
 //====================================================================================
-// Àò±oFAST¯S¼xÂI
+// ç²å¾—FASTç‰¹å¾µé»
 static void fast(const ImgRaw& img, Feat& feat){
 	vector<unsigned char> raw_data = img;
 	uchar* data = raw_data.data();
 	const int xsize = img.width, ysize = img.height, stride = xsize, threshold = 16;
 	feat.feat = fast9_detect_nonmax(data, xsize, ysize, xsize, threshold, &feat.len);
 }
-// ¿n¤À¼Ò½k
+// ç©åˆ†æ¨¡ç³Š
 static void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 	newimg = img;
 	if(n < 3) {
-		throw out_of_range("¾B¸n¤£¸Ó¤p©ó3");
+		throw out_of_range("é®ç½©ä¸è©²å°æ–¼3");
 	}
 	int dn = (n - 1) / 2;
 
@@ -100,7 +98,7 @@ static void Lowpass(const ImgRaw& img, ImgRaw& newimg, int n = 3) {
 		}
 	}
 }
-// ¨ú¥­§¡
+// å–å¹³å‡
 static double average(const ImgRaw& img, int x, int y) {
 	double avg = 0.0;
 	const int r = 2;
@@ -108,13 +106,13 @@ static double average(const ImgRaw& img, int x, int y) {
 		for(int i = -r; i <= r; i++) {
 			int thisx = x + i;
 			int thisy = y + j;
-			// ³B²z­t¸¹
+			// è™•ç†è² è™Ÿ
 			if(thisx < 0.0 or thisx >= img.width-1 or 
 				thisy < 0.0 or thisy > img.height-1)
 			{
 				throw out_of_range("out");
 			}
-			// ²Ö¥[
+			// ç´¯åŠ 
 			int posi = thisy * img.width + thisx;
 			avg += img[posi];
 		}
@@ -122,7 +120,7 @@ static double average(const ImgRaw& img, int x, int y) {
 	avg /= 25.0;
 	return avg;
 }
-// ´y­z¯S¼xÂI¤ºªº¤@­Óbit
+// æè¿°ç‰¹å¾µé»å…§çš„ä¸€å€‹bit
 static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 	double point1 = average(img, x1, y1);
 	double point2 = average(img, x2, y2);
@@ -133,22 +131,22 @@ static bool Compare(const ImgRaw& img, int x1, int y1, int x2, int y2) {
 		return false;
 	}
 }
-// ´y­z¤@­Ó¯S¼xÂI
+// æè¿°ä¸€å€‹ç‰¹å¾µé»
 static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 	OrbDest bin;
 //#pragma omp parallel for
 	for(int k = 0; k < 128; k++) {
-		// ®Ú¾Ú¨¤«×¿ï¤£¦P¦ì²¾²Õ
+		// æ ¹æ“šè§’åº¦é¸ä¸åŒä½ç§»çµ„
 
-		// ´y­zÂI¹ï
-		// todo °® ³o¸Ì¦n¹³¦³¿ù
+		// æè¿°é»å°
+		// todo ä¹¾ é€™è£¡å¥½åƒæœ‰éŒ¯
 		/*const int singIdx = sing/30.0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
 
-		// ¤£±ÛÂà
+		// ä¸æ—‹è½‰
 		const int singIdx = 0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
@@ -159,7 +157,7 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 	}
 	return bin;
 }
-// ´y­z©Ò¦³¯S¼xÂI
+// æè¿°æ‰€æœ‰ç‰¹å¾µé»
 static void desc_ORB(const ImgRaw& img, Feat& feat) {
 	ImgRaw img2;
 	img2.nomal=0;
@@ -167,7 +165,7 @@ static void desc_ORB(const ImgRaw& img, Feat& feat) {
 	vector<OrbDest> bin(feat.size());
 #pragma omp parallel for
 	for(int i = 0; i < feat.size(); i++) {
-		// ´y­z
+		// æè¿°
 		int x = feat[i].x;
 		int y = feat[i].y;
 		bin[i] = descriptor_ORB(img2, x, y, (feat.sita)[i]);
@@ -175,19 +173,19 @@ static void desc_ORB(const ImgRaw& img, Feat& feat) {
 	feat.bin = std::move(bin);
 }
 void create_ORB(const ImgRaw& img, Feat& feat) {
-	// FAST¯S¼xÂI
+	// FASTç‰¹å¾µé»
 	fast(img, feat);
-	// Harris¹LÂo¨¤ÂI
+	// Harriséæ¿¾è§’é»
 	//harris_coners(img, feat);
 
 
 
 	Mat image(img.height, img.width, CV_32F, (void*)img.raw_img.data());
 	Mat gray=image;
-	// ªì©l¤Æmask
+	// åˆå§‹åŒ–mask
 	Mat mask(Mat::zeros(Size(img.width, img.height),CV_8U));
 	Mat mask2(Mat::ones(Size(img.width, img.height),CV_8U));
-	// §â feat ªº xy Âà¨ì mask
+	// æŠŠ feat çš„ xy è½‰åˆ° mask
 	int edg=3+20;
 
 	for(int i = 0; i < feat.len; i++) {
@@ -197,22 +195,22 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 		Point pt(x, y);
 		//cout << "string=" << pt << endl;
 
-		// ¹LÂoÃä½t¦ì¸m
+		// éæ¿¾é‚Šç·£ä½ç½®
 		if(x>=(edg) and x<=img.width-(edg) && y>=(edg) and y<=img.height-(edg)) {
 			mask.at<uchar>(pt) = 255;
 		}
 	}
 
-	//cout << "FAST corner ¼Æ¶q = " << feat.len << endl;
+	//cout << "FAST corner æ•¸é‡ = " << feat.len << endl;
 	vector<Point2f> corners;
 	
-	goodFeaturesToTrack(gray, corners, 1500, 0.01, 10, mask, 3, true, 0.04);
+	goodFeaturesToTrack2(gray, corners, 1500, 0.01, 10, mask, 3, 3, true, 0.04);
 	
 
 	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
-	//cout << "Harris corner ¼Æ¶q = " << corners.size() << endl;
+	//cout << "Harris corner æ•¸é‡ = " << corners.size() << endl;
 
-	// ¦^¶ñ xy ¦ì¸m
+	// å›å¡« xy ä½ç½®
 	int newLen=0;
 	for(int i = 0; i < corners.size(); i++) {
 		int x=corners[i].x;
@@ -245,7 +243,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 
 
 
-	// ¦Ç«×­«¤ßªk
+	// ç°åº¦é‡å¿ƒæ³•
 	GrayCenterOfMass(img, feat, 3);
 
 	//ImgRaw temp = img;
@@ -256,17 +254,17 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 	//temp.bmp("arrow"+to_string(num++)+".bmp");
 
 
-	// ´y­z¯S¼x
+	// æè¿°ç‰¹å¾µ
 	desc_ORB(img, feat);
 }
 
-// º~©ú¶ZÂ÷
+// æ¼¢æ˜è·é›¢
 static int hamDist(const OrbDest& a, const OrbDest& b) {
 	return (a^b).count();
 }
-// °t¹ïORB
+// é…å°ORB
 void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
-	// todo ³o¸ÌÁÙ¨S delete
+	// todo é€™è£¡é‚„æ²’ delete
 	feat1.feat_match = new xy[feat1.size()];
 
 	int max_dist = 0; int min_dist = 100;
@@ -279,13 +277,13 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 		int matchIdx = -1;
 		for(int i = 0; i < feat2.size(); i++) {
 			int distCurr = hamDist(feat1.bin[j], feat2.bin[i]);
-			// ¶ZÂ÷¸ûµu«h§ó·s
+			// è·é›¢è¼ƒçŸ­å‰‡æ›´æ–°
 			if(distCurr < dist) {
 				dist = distCurr;
 				matchIdx = i;
 			}
 		}
-		// ¥[¤J¤Ç°tÂI
+		// åŠ å…¥åŒ¹é…é»
 		//cout << "dist=" << dist << endl;
 		if(dist > 16 /*or
 					 abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
@@ -296,7 +294,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 			feat1.feat_match[j].x = feat2.feat[matchIdx].x;
 			feat1.feat_match[j].y = feat2.feat[matchIdx].y;
 			feat1.distance[j] = dist;
-			// ­pºâ³Ì¤j³Ì¤p¶ZÂ÷
+			// è¨ˆç®—æœ€å¤§æœ€å°è·é›¢
 			if(dist!=0 && dist < min_dist) min_dist = dist;
 			if(dist > max_dist) max_dist = dist;
 		}
@@ -340,7 +338,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	vector<char> RANSAC_mask;
 	Mat Hog = findHomography(featPoint1, featPoint2, RANSAC, 3, RANSAC_mask, 2000, 0.995);
 
-	// §ó·s¨ì feat
+	// æ›´æ–°åˆ° feat
 	feat1.len=featPoint1.size();
 	for(size_t i = 0; i < featPoint1.size(); i++) {
 		if(RANSAC_mask[i]!=0) {
@@ -355,7 +353,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 		}
 	}
 
-	// ¿é¥X¨ì hog
+	// è¼¸å‡ºåˆ° hog
 	HomogMat.resize(Hog.cols*Hog.rows);
 	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
 		for(size_t i = 0; i < Hog.cols; i++, idx++) {
@@ -364,17 +362,17 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 		}// cout << endl;
 	} //cout << endl;
 
-	cout << "Hog=\n" << Hog << endl;
+	// cout << "Hog = \n" << Hog << endl;
 }
 
 
-// ¦X¨Ö¨â±i¹Ï
+// åˆä½µå…©å¼µåœ–
 ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	ImgRaw stackImg;
 	stackImg.nomal=0;
 	int Width  = img1.width+img2.width;
 	int Height = img1.height;
-	// ¦X¨Ö¨â±i¹Ï
+	// åˆä½µå…©å¼µåœ–
 	stackImg.resize(img1.width*2, img2.height, 24);
 	for (size_t j = 0; j < img1.height; j++) {
 		for (size_t i = 0; i < img1.width; i++) {
@@ -390,7 +388,7 @@ ImgRaw imgMerge(const ImgRaw& img1, const ImgRaw& img2) {
 	}
 	return stackImg;
 }
-// µe½u (¹ï¥»¦a¸ê®Æµ²ºc)
+// ç•«ç·š (å°æœ¬åœ°è³‡æ–™çµæ§‹)
 void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
 	size_t featNum = feat.size();
 	ImgRaw outImg = stackImg;
@@ -413,7 +411,7 @@ void featDrawLine(string name, const ImgRaw& stackImg, const Feat& feat) {
 
 	outImg.bmp(name, 24);
 }
-// µe½u (¹ïblend¸ê®Æµ²ºc)
+// ç•«ç·š (å°blendè³‡æ–™çµæ§‹)
 void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RANfeat , size_t RANfeatNum) {
 	ImgRaw outImg = stackImg;
 	int i;
@@ -440,7 +438,7 @@ void featDrawLine2(string name, const ImgRaw& stackImg, Feature const* const* RA
 	//cout << "idxxxxxx=" << i << endl;
 	outImg.bmp(name, 24);
 }
-// Âà´«¨ì blen ªº¸ê®Æµ²ºc
+// è½‰æ›åˆ° blen çš„è³‡æ–™çµæ§‹
 void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
 	size_t featNum = feat.size();
 	RANfeat = new Feature*[featNum]{};
@@ -468,7 +466,7 @@ void getNewfeat(const Feat& feat, Feature**& RANfeat , size_t& RANfeatNum) {
 			f->y = y2;
 			f->fwd_match = fm;
 
-			// ¿é¤J
+			// è¼¸å…¥
 			RANfeat[idx]=f;
 			/*cout << RANfeat[idx]->rX() << ", ";
 			cout << RANfeat[idx]->rY() << "---->";

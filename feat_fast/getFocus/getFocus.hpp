@@ -86,7 +86,7 @@ public:
 };
 
 
-float getWarpFocal(const vector<float>& HomogMat, 
+double getWarpFocal(const vector<float>& HomogMat, 
 	size_t img1Size, size_t img2Size);
 
 void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,

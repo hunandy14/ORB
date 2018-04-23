@@ -47,15 +47,16 @@ int main(int argc, char const *argv[]) {
 	Feat feat, feat2;
 	t1.start();
 	create_ORB(img1_gray, feat);
-	t1.print(" >>>>>>>>>>>>>>>>>>create_ORB1"); // 0.274
+	t1.print(" create_ORB1"); // 0.274
+	cout << "===============" << endl;
 	t1.start();
 	create_ORB(img2_gray, feat2);
-	t1.print(" >>>>>>>>>>>>>>>>>>create_ORB2"); // 0.274
+	t1.print(" create_ORB2"); // 0.274
 	// 尋找配對點
 	vector<float> HomogMat;
 	t1.start();
 	matchORB(feat2, feat, HomogMat);
-	t1.print(" >>>>>>>>>>>>>>>>>>matchORB"); // 0.006
+	t1.print(" matchORB"); // 0.006
 	// 測試配對點
 	//ImgRaw stackImg = imgMerge(img1, img2);
 	//stackImg.bmp("merge.bmp");
@@ -74,13 +75,17 @@ int main(int argc, char const *argv[]) {
 	int mx=0, my=0; float ft=0;
 	t1.start();
 	ft = getWarpFocal(HomogMat, imgL.size(), imgR.size());
+	t1.print(" getWarpFocal"); // 0
+	t1.start();
 	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, ft);
+	t1.print(" getWarpOffset"); // 0.13
 	//cout << "ft=" << ft << ", Offset(" << mx << ", " << my << ")" << endl;
 	//====================================================================================
+	t1.start();
 	LapBlender(lapblend, warpL, warpR, ft, mx, my);
-	t1.print(" >>>>>>>>>>>>>>>>>>LapBlender"); // 0.4->0.04
-
-	total.print("total time"); //0.8
+	t1.print(" LapBlender"); // 0.022
+	cout << "=======================================" << endl;
+	total.print("#### total time"); //0.093
 	ImgData_write(lapblend, "__lapBlend.bmp");
 
 #endif // harrisTest

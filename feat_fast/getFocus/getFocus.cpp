@@ -20,52 +20,37 @@ using namespace std;
 
 
 // 輸入 仿射矩陣 獲得焦距
-static void focalsFromHomography(const vector<float> &Hmg, float &f0, float &f1, bool &f0_ok, bool &f1_ok)
+static void focalsFromHomography(const vector<float> &HomogMat, double &f0, double &f1, bool &f0_ok, bool &f1_ok)
 {
-	float d1, d2; // Denominators. 分母. 
-	float v1, v2; // Focal squares value candidates. Focal平方值候選.
+	const auto& h = HomogMat;
+
+	double d1, d2; // Denominators
+	double v1, v2; // Focal squares value candidates
 
 	f1_ok = true;
-	d1 = Hmg[6] * Hmg[7];
-	d2 = (Hmg[7] - Hmg[6]) * (Hmg[7] + Hmg[6]);
-	v1 = -(Hmg[0] * Hmg[1] + Hmg[3] * Hmg[4]) / d1;
-	v2 = (Hmg[0] * Hmg[0] + Hmg[3] * Hmg[3] - Hmg[1] * Hmg[1] - Hmg[4] * Hmg[4]) / d2;
-
-	if (v1 < v2) {
-		swap(v1, v2);
-	}
-	if (v1 > 0 && v2 > 0) {
-		f1 = sqrt(abs(d1) > abs(d2) ? v1 : v2);
-	} else if (v1 > 0) {
-		f1 = sqrt(v1);
-	} else {
-		f1_ok = false;
-	}
+	d1 = h[6] * h[7];
+	d2 = (h[7] - h[6]) * (h[7] + h[6]);
+	v1 = -(h[0] * h[1] + h[3] * h[4]) / d1;
+	v2 = (h[0] * h[0] + h[3] * h[3] - h[1] * h[1] - h[4] * h[4]) / d2;
+	if (v1 < v2) std::swap(v1, v2);
+	if (v1 > 0 && v2 > 0) f1 = std::sqrt(std::abs(d1) > std::abs(d2) ? v1 : v2);
+	else if (v1 > 0) f1 = std::sqrt(v1);
+	else f1_ok = false;
 
 	f0_ok = true;
-	d1 = Hmg[0] * Hmg[3] + Hmg[1] * Hmg[4];
-	d2 = Hmg[0] * Hmg[0] + Hmg[1] * Hmg[1] - Hmg[3] * Hmg[3] - Hmg[4] * Hmg[4];
-	v1 = -Hmg[2] * Hmg[5] / d1;
-	v2 = (Hmg[5] * Hmg[5] - Hmg[2] * Hmg[2]) / d2;
-
-	if (v1 < v2) {
-		swap(v1, v2);
-	}
-	if (v1 > 0 && v2 > 0) {
-		f0 = sqrt(abs(d1) > abs(d2) ? v1 : v2);
-	} else if (v1 > 0) {
-		f0 = sqrt(v1);
-	} else {
-		f0_ok = false;
-	}
+	d1 = h[0] * h[3] + h[1] * h[4];
+	d2 = h[0] * h[0] + h[1] * h[1] - h[3] * h[3] - h[4] * h[4];
+	v1 = -h[2] * h[5] / d1;
+	v2 = (h[5] * h[5] - h[2] * h[2]) / d2;
+	if (v1 < v2) std::swap(v1, v2);
+	if (v1 > 0 && v2 > 0) f0 = std::sqrt(std::abs(d1) > std::abs(d2) ? v1 : v2);
+	else if (v1 > 0) f0 = std::sqrt(v1);
+	else f0_ok = false;
 }
-
-
-
 // 獲得焦距(所有圖共用一個ft).
-float getWarpFocal(const vector<float> &HomogMat, size_t img1Size, size_t img2Size) {
+double getWarpFocal(const vector<float> &HomogMat, size_t img1Size, size_t img2Size) {
 	int img_total = 2;
-	float f0 = 0.f, f1 = 0.f, ft = 0.f;
+	double f0 = 0.f, f1 = 0.f, ft = 0.f;
 	bool f0ok = false, f1ok = false;
 
 	vector<float> all_focals;
@@ -90,6 +75,10 @@ float getWarpFocal(const vector<float> &HomogMat, size_t img1Size, size_t img2Si
 	//cout << "ft = " << ft << endl;
 	return ft;
 }
+
+
+
+
 // 對齊取得第二張圖偏移量
 void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 	Feature const* const* good_match, int gm_num,
@@ -112,7 +101,9 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 		imgraw_to_raw(imgB)
 	};
 	//------------------------------------------------------------------------
+	Timer t1;
 	Raw img1=imgraw_to_raw(imgA), img2=imgraw_to_raw(imgB);
+	t1.print("這裡就浪費6毫秒");
 
 	int cal_dx = 0;
 	int cal_dy = 0;
@@ -128,24 +119,25 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 	const float&& fL2_pow = pow(fL2, 2);
 
 	Timer t;
+//#pragma omp parallel for
 	for (int i = 0; i < gm_num-1; i++) {
 		Feature const* const& curr_m = good_match[i];
-		const float&& imgX1 = curr_m->rX();
-		const float&& imgY1 = curr_m->rY();
-		const float&& imgX2 = curr_m->fwd_match->rX();
-		const float&& imgY2 = curr_m->fwd_match->rY();
+		const float imgX1 = curr_m->x;
+		const float imgY1 = curr_m->y;
+		const float imgX2 = curr_m->fwd_match->x;
+		const float imgY2 = curr_m->fwd_match->y;
 		// 圖1
 		float theta1 = fastAtanf_rad((imgX2 - mid_x1) / fL1);
 		float h1 = imgY2 - mid_y1;
 		h1 /= sqrt(pow((imgX2 - mid_x1), 2) + fL1_pow);
-		int x1 = (int)round(fL1*theta1 + mid_x1);
-		int y1 = (int)round(fL1*h1 + mid_y1);
+		int x1 = (int)(fL1*theta1 + mid_x1+.5);
+		int y1 = (int)(fL1*h1 + mid_y1+.5);
 		// 圖2
 		float theta2 = fastAtanf_rad((imgX1 - mid_x2) / fL2);
 		float h2 = imgY1 - mid_y2;
 		h2 /= sqrt(pow((imgX1 - mid_x2), 2) + fL2_pow);
-		int x2 = (int)round(fL2*theta2 + mid_x2 + img1.getCol());
-		int y2 = (int)round(fL2*h2 + mid_y2);
+		int x2 = (int)(fL2*theta2 + mid_x2 + img1.getCol() +.5);
+		int y2 = (int)(fL2*h2 + mid_y2 +.5);
 		// 累加座標.
 		int distX = x2 - x1;
 		int distY = img1.getRow() - y1 + y2;
