@@ -26,6 +26,14 @@ Raw2Img::raw2bmp("out.bmp", raw_img, weidth, heigh, 8);
 #include <iostream>
 #include <fstream>
 #include "Raw2img_type.hpp"
+
+// 資料結構
+struct basic_ImgData {
+	std::vector<unsigned char> raw_img;
+	uint32_t width;
+	uint32_t height;
+	uint16_t bits;
+};
 //----------------------------------------------------------------
 
 /*

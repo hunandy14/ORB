@@ -6,13 +6,7 @@ Final: 2018/04/12
 *****************************************************************/
 #pragma once
 
-// 資料結構
-struct basic_ImgData {
-	std::vector<unsigned char> raw_img;
-	uint32_t width;
-	uint32_t height;
-	uint16_t bits;
-};
+#include "Raw2Img.hpp"
 // ImgData 操作函式
 void ImgData_resize(basic_ImgData & dst, int newW, int newH, int bits);
 void ImgData_resize(const basic_ImgData & src, basic_ImgData & dst);

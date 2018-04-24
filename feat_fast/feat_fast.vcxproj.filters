@@ -49,6 +49,9 @@
     <Filter Include="自訂函式庫\LapBlend">
       <UniqueIdentifier>{784a8a4c-8d0a-45d3-a431-c022bc0e4899}</UniqueIdentifier>
     </Filter>
+    <Filter Include="自訂函式庫\WarpPers">
+      <UniqueIdentifier>{2a988cf1-ecfa-4b54-be48-e5bbcd2fafaa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -99,6 +102,9 @@
     <ClCompile Include="LapBlend\LapBlend.cpp">
       <Filter>自訂函式庫\LapBlend</Filter>
     </ClCompile>
+    <ClCompile Include="WarpPers\WarpPers.cpp">
+      <Filter>自訂函式庫\WarpPers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImgRaw\Imgraw.hpp">
@@ -136,6 +142,9 @@
     </ClInclude>
     <ClInclude Include="LapBlend\LapBlend.hpp">
       <Filter>自訂函式庫\LapBlend</Filter>
+    </ClInclude>
+    <ClInclude Include="WarpPers\WarpPers.hpp">
+      <Filter>自訂函式庫\WarpPers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

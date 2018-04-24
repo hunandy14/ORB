@@ -165,6 +165,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="opencvTest.cpp" />
     <ClCompile Include="ORB.cpp" />
+    <ClCompile Include="WarpPers\WarpPers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fastlib\fast.h" />
@@ -179,6 +180,7 @@
     <ClInclude Include="opencvTest.hpp" />
     <ClInclude Include="ORB.hpp" />
     <ClInclude Include="ORB_bit_pattern_31_.hpp" />
+    <ClInclude Include="WarpPers\WarpPers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="testCode.hpp" />

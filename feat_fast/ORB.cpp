@@ -351,11 +351,11 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
 	for(size_t j = 0, idx=0; j < Hog.rows; j++) {
 		for(size_t i = 0; i < Hog.cols; i++, idx++) {
 			HomogMat[idx]=Hog.at<double>(j, i);
-			//cout << HomogMat[idx] << ", ";
-		}// cout << endl;
-	} //cout << endl;
+			cout << HomogMat[idx] << ", ";
+		} cout << endl;
+	} cout << endl;
 
-	// cout << "Hog = \n" << Hog << endl;
+	//cout << "Hog = \n" << Hog << endl;
 }
 
 

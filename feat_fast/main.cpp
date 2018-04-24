@@ -36,18 +36,20 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	ImgData_read(warpL, name1);
 	ImgData_read(warpR, name2);
 	//====================================================================================
-	//Timer t1;
+	Timer t1;
 	Timer total;
 	//t1.priSta=1;
 	// ORB
 	Feat feat, feat2;
+	t1.start();
 	create_ORB(img1_gray, feat); // 0.25ms
-	//t1.print(" create_ORB1");
+	t1.print(" create_ORB1");
 
 	//t1.start();
 	create_ORB(img2_gray, feat2);
 	//t1.print(" create_ORB2"); // 0.25ms
-							  // 尋找配對點
+
+	// 尋找配對點
 	vector<float> HomogMat;
 	//t1.start();
 	matchORB(feat2, feat, HomogMat);
@@ -97,13 +99,13 @@ int main(int argc, char const *argv[]) {
 	//imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
 	//imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
 
-	imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
-	/*imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2950.bmp", "data\\DSC_2951.bmp", "resultImg\\blend", 1);*/
+	//imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2950.bmp", "data\\DSC_2951.bmp", "resultImg\\blend", 1);
 	return 0;
 }
 //====================================================================================
