@@ -256,7 +256,7 @@ static int hamDist(const OrbDest& a, const OrbDest& b) {
 	return (a^b).count();
 }
 // 配對ORB
-void matchORB(Feat& feat1, const Feat& feat2, vector<float>& HomogMat) {
+void matchORB(Feat& feat1, const Feat& feat2, vector<double>& HomogMat) {
 	// todo 這裡還沒 delete
 	feat1.feat_match = new xy[feat1.size()];
 

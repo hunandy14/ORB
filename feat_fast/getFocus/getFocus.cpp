@@ -20,7 +20,7 @@ using namespace std;
 
 
 // 輸入 仿射矩陣 獲得焦距
-static void focalsFromHomography(const vector<float> &HomogMat, double &f0, double &f1, bool &f0_ok, bool &f1_ok)
+static void focalsFromHomography(const vector<double> &HomogMat, double &f0, double &f1, bool &f0_ok, bool &f1_ok)
 {
 	const auto& h = HomogMat;
 
@@ -48,12 +48,12 @@ static void focalsFromHomography(const vector<float> &HomogMat, double &f0, doub
 	else f0_ok = false;
 }
 // 獲得焦距(所有圖共用一個ft).
-double getWarpFocal(const vector<float> &HomogMat, size_t img1Size, size_t img2Size) {
+double getWarpFocal(const vector<double> &HomogMat, size_t img1Size, size_t img2Size) {
 	int img_total = 2;
 	double f0 = 0.f, f1 = 0.f, ft = 0.f;
 	bool f0ok = false, f1ok = false;
 
-	vector<float> all_focals;
+	vector<double> all_focals;
 	if(!HomogMat.empty()) {
 		focalsFromHomography(HomogMat, f0, f1, f0ok, f1ok);
 		if(f0ok && f1ok) {
@@ -68,9 +68,9 @@ double getWarpFocal(const vector<float> &HomogMat, size_t img1Size, size_t img2S
 			ft = (all_focals[all_focals.size() / 2 - 1] + all_focals[all_focals.size() / 2]) * 0.5f;
 		}
 	} else {
-		float focals_sum = 0.f;
+		double focals_sum = 0.f;
 		focals_sum += img1Size + img2Size;
-		ft = focals_sum / (float)img_total;
+		ft = focals_sum / (double)img_total;
 	}
 	//cout << "ft = " << ft << endl;
 	return ft;

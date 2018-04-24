@@ -9,11 +9,12 @@ Final: 2018/03/19
 #include "feat.hpp"
 #include "getFocus\getFocus.hpp"
 #include "LapBlend\LapBlend.hpp"
+#include "WarpPers\WarpPers.hpp"
 
 // 漢明距離
 void create_ORB(const ImgRaw & img, Feat & feat);
 // 配對ORB
-void matchORB(Feat & feat1, const Feat & feat2, vector<float>& HomogMat);
+void matchORB(Feat & feat1, const Feat & feat2, vector<double>& HomogMat);
 // 合併兩張圖
 ImgRaw imgMerge(const ImgRaw & img1, const ImgRaw & img2);
 // 畫線 (對本地資料結構)

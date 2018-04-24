@@ -50,7 +50,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	//t1.print(" create_ORB2"); // 0.25ms
 
 	// 尋找配對點
-	vector<float> HomogMat;
+	vector<double> HomogMat;
 	//t1.start();
 	matchORB(feat2, feat, HomogMat);
 	//t1.print(" matchORB"); // 0.006
@@ -78,7 +78,8 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	cout << "ft=" << ft << ", Ax=" << mx << ", Ay=" << my << ";" << endl;
 	//====================================================================================
 	//t1.start();
-	LapBlender(lapblend, warpL, warpR, ft, mx, my);
+	//LapBlender(lapblend, warpL, warpR, ft, mx, my);
+	WarpPers_Stitch(lapblend, warpL, warpR, HomogMat);
 	//t1.print(" LapBlender"); // 0.022
 	//cout << "=======================================" << endl;
 	total.print("# total time"); //0.093
