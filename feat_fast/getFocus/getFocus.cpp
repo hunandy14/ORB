@@ -97,45 +97,24 @@ void estimateFocal(const vector<double> &HomogMat, double& focals) {
 // 對齊取得第二張圖偏移量
 void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 	Feature const* const* good_match, int gm_num,
-	int &x, int &y, float FL)
+	int &dx, int &dy, float FL)
 {
-	//------------------------------------------------------------------------
-	// 轉換用函式.
-	auto&& raw_to_imgraw = [](const Raw& src){
-		ImgRaw dst(src.RGB, src.getCol(), src.getRow(), 24);
-		return dst;
-	};
-	auto&& imgraw_to_raw = [](const ImgRaw& src){
-		Raw dst(src.width, src.height);
-		dst.RGB = src; // 這裡會呼叫重載函式轉uch
-		return dst;
-	};
-	// 宣告所需資料項目.
-	vector<Raw> InputImage = {
-		imgraw_to_raw(imgA),
-		imgraw_to_raw(imgB)
-	};
-	//------------------------------------------------------------------------
-	Timer t1;
-	// todo 這裡就浪費6毫秒
-	Raw img1=imgraw_to_raw(imgA), img2=imgraw_to_raw(imgB);
-	//t1.print("這裡就浪費6毫秒");
+	Timer t, t1;
 
-	int cal_dx = 0;
-	int cal_dy = 0;
 	// 中間值.
-	const float&& mid_x1 = (float)img1.getCol() / 2.f;
-	const float&& mid_x2 = (float)img2.getCol() / 2.f;
-	const float&& mid_y1 = (float)img1.getRow() / 2.f;
-	const float&& mid_y2 = (float)img2.getRow() / 2.f;
+	const float&& mid_x1 = (float)imgA.width / 2.f;
+	const float&& mid_x2 = (float)imgB.width / 2.f;
+	const float&& mid_y1 = (float)imgA.height / 2.f;
+	const float&& mid_y2 = (float)imgB.height / 2.f;
 	// 先算平方.
 	const float& fL1 = FL;
 	const float& fL2 = FL;
 	const float&& fL1_pow = pow(fL1, 2);
 	const float&& fL2_pow = pow(fL2, 2);
 
-	Timer t;
-//#pragma omp parallel for
+	
+	int cal_dx(0), cal_dy(0);
+//#pragma omp parallel for reduction(+:cal_dx) reduction(+:cal_dy)
 	for (int i = 0; i < gm_num-1; i++) {
 		Feature const* const& curr_m = good_match[i];
 		const float imgX1 = curr_m->x;
@@ -152,15 +131,14 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 		float theta2 = fastAtanf_rad((imgX1 - mid_x2) / fL2);
 		float h2 = imgY1 - mid_y2;
 		h2 /= sqrt(pow((imgX1 - mid_x2), 2) + fL2_pow);
-		int x2 = (int)(fL2*theta2 + mid_x2 + img1.getCol() +.5);
+		int x2 = (int)(fL2*theta2 + mid_x2 + imgA.width +.5);
 		int y2 = (int)(fL2*h2 + mid_y2 +.5);
 		// 累加座標.
 		int distX = x2 - x1;
-		int distY = img1.getRow() - y1 + y2;
+		int distY = imgA.height - y1 + y2;
 		cal_dx += distX;
 		cal_dy += distY;
 	}
-	//t.print("match time.");
 
 	// 平均座標.
 	int avg_dx = (float)cal_dx / (float)(gm_num-1);
@@ -168,14 +146,14 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 
 	// 修正座標(猜測是4捨5入哪裡怎樣沒寫好才變成這樣).
 	if(avg_dx % 2 == 0){
-		if(avg_dx + 1 <= img1.getCol() && avg_dx + 1 <= img2.getCol()){
+		if(avg_dx + 1 <= imgA.width && avg_dx + 1 <= imgB.width){
 			avg_dx += 1;
 		} else{
 			avg_dx -= 1;
 		}
 	}
 	if(avg_dy % 2 == 0){
-		if(avg_dy + 1 <= img1.getRow() && avg_dy + 1 <= img2.getRow()){
+		if(avg_dy + 1 <= imgA.height && avg_dy + 1 <= imgB.height){
 			avg_dy += 1;
 			//cout << "		############ this is up" << endl;
 
@@ -189,31 +167,25 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 		//cout << "		############ this is else" << endl;
 	}
 
-	// 輸出座標.
-	x=(avg_dx);
-	y=(avg_dy);
-
-	int xMove , yMove;
-	int xM, yM;
-
 	// 假如 y 的偏移量大於圖片高
-	if(y > imgA.height) {
-		int dyy = -((int)imgA.height - abs((int)imgA.height - y));
-		xMove = x;
-		yMove = dyy;
-
+	int xM, yM;
+	if(dy > imgA.height) {
+		int dyy = -((int)imgA.height - abs((int)imgA.height - avg_dy));
+		int xMove = avg_dx;
+		int yMove = dyy;
 		xM = imgA.width - xMove;
 		yM = -(int)imgA.height - yMove;
 	} else { // 通常情況
-		xMove = x;
-		yMove = y;
+		int xMove = avg_dx;
+		int yMove = avg_dy;
 
 		xM = imgA.width - xMove;
 		yM = imgA.height - yMove;
 	}
-	//cout << "(x, y)Move = " << xM << ", " << yM << endl;
-	x=xM;
-	y=yM;
+
+	// 輸出座標
+	dx=xM;
+	dy=yM;
 }
 
 
