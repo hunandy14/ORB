@@ -102,16 +102,19 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
-	imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
+	//imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
 	//imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
 
 	imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2952.bmp", "data\\DSC_2953.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2958.bmp", "data\\DSC_2959.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2956.bmp", "data\\DSC_2957.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2950.bmp", "data\\DSC_2951.bmp", "resultImg\\blend", 1);
+	
 	return 0;
 }
 //====================================================================================

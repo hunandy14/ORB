@@ -608,9 +608,88 @@ void delPillarboxing(const basic_ImgData &src, basic_ImgData &dst,
 	}
 	ImgData_write(dst, "delPillarboxing.bmp");
 }
+// 加入與修正 offset 偏差值
+void fixOffset(vector<int>& corner, int x, int y) {
+	if (corner.size()==4) {
+		corner.push_back(x);
+		corner.push_back(y);
+
+		int newH, newW, lapH, lapW, mx, my;
+		// 修正單數偏差
+		newH=corner[3]-corner[1]-abs(corner[5]);
+		lapH=corner[3]-corner[1]-abs(corner[5]);
+		lapW=corner[2]-corner[0]-corner[4];
+		my=corner[5];
+
+		int offset=0;
+		/*// 高單數差(高度差太小本身並不會產生問題)
+		if (lapH%2 == 1 and abs(my) > 2 and lapW%2 == 0) {
+			// 向0靠近
+			offset=2;
+			if (my>0 ) {
+				corner[5] -= offset;
+			} else if(my<0) {
+				corner[5] += offset;
+			}
+			if (lapW%2 == 0) {
+				corner[4] -= offset;
+			} else {
+				corner[4] -= offset;
+			}
+		}
+		// 高偶數差(高度差太小本身並不會產生問題)
+		//cout << "abs(y)=" << abs(y) << endl;
+		else if (lapH%2 == 0) {
+			//cout << "+++++++++++++++++++++++++++is2" << endl;
+			// 向0靠近
+			offset=(abs(my)/10.0)+.5;
+			offset=1;
+			if (my>0 ) {
+				corner[5] -= offset; // 向下
+			} else if(my<0) {
+				corner[5] += offset;
+			}
+
+			if (x%2 == 0) {
+				corner[4] += offset;
+			} else {
+				corner[4] -= offset; // 向右
+			}
+		}*/
+
+		if (lapH%2 == 1 and abs(my) > 2 and lapW%2 == 0) {
+			// 向0靠近
+			offset=2;
+			if (my>0 ) {
+				corner[5] -= offset;
+			} else if(my<0) {
+				corner[5] += offset;
+			}
+			if (lapW%2 == 0) {
+				corner[4] -= offset;
+			} else {
+				corner[4] -= offset;
+			}
+		}
+
+		lapH=corner[3]-corner[1]-abs(corner[5]);
+		lapW=corner[2]-corner[0]-corner[4];
+		if (lapW%2 == 1 and lapH%2 == 0) {
+			offset=2;
+			corner[5] += -1;
+		}
+
+		lapH=corner[3]-corner[1]-abs(corner[5]);
+		lapW=corner[2]-corner[0]-corner[4];
+		if (lapW%2 == 0 and lapH%2 == 0 &&
+			x%2 == 1 and y%2 == 1 and y >1) {
+			corner[5] += 1;
+		}
+	}
+}
 // 取出重疊區
 void getOverlap(const basic_ImgData &src1, const basic_ImgData &src2,
-	basic_ImgData& cut1, basic_ImgData& cut2, vector<int> corner)
+	basic_ImgData& cut1, basic_ImgData& cut2, vector<int>& corner)
 {
 	// 新圖大小
 	int newH=corner[3]-corner[1]-abs(corner[5]);
@@ -628,18 +707,6 @@ void getOverlap(const basic_ImgData &src1, const basic_ImgData &src2,
 	int myB = my>0? 0:-my;
 	int mxA = mx;
 	int mxB = mx;
-
-	// 修正單數偏差
-	if (lapH%2 == 1) {
-		if (my>0 ) {
-			myB+=2;
-		} else if(my<0) {
-			myB-=2;
-		}
-	}
-	if (lapW%2 == 0) {
-		mxB+=-2;
-	}
 	
 	// 重疊區
 	ImgData_resize(cut1, lapW, lapH, 24);
@@ -798,8 +865,7 @@ void WarpCyliMuitBlend(basic_ImgData &dst,
 	// 檢測圓柱圖角點(minX, minY, maxX, maxY, mx, my)
 	vector<int> corner;
 	WarpCyliCorner(src1, corner);
-	corner.push_back(mx);
-	corner.push_back(my);
+	fixOffset(corner, mx, my);
 	
 	// 取出重疊區
 	basic_ImgData cut1, cut2;

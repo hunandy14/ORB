@@ -146,29 +146,36 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 
 	// 修正座標(猜測是4捨5入哪裡怎樣沒寫好才變成這樣).
 	if(avg_dx % 2 == 0){
-		if(avg_dx + 1 <= imgA.width && avg_dx + 1 <= imgB.width){
-			avg_dx += 1;
+		if( imgA.width-avg_dx + 1 <= imgA.width && imgA.width- avg_dx + 1 <= imgB.width){
+			//avg_dx += 1;
 		} else{
-			avg_dx -= 1;
+			//avg_dx -= 1;
 		}
-	} else if(avg_dx % 2 == 1) {
+	} 
+	else if(avg_dx % 2 == 1) {
 		avg_dx += +0; // 越多右圖越往 <-
 	}
+
+	static int num=-1;
+	++num;
 	if(avg_dy % 2 == 0){
-		if(avg_dy + 1 <= imgA.height && avg_dy + 1 <= imgB.height){
+		if(imgA.height-avg_dy + 1 <= imgA.height && imgA.height-avg_dy + 1 <= imgB.height
+			and abs((int)imgA.height-avg_dy)>1){
 			avg_dy += 1;
-			cout << "		############ this is up" << endl;
+			cout << abs(avg_dy) <<"   ############# this Y is up" << num << endl;
 
 		} else{
 			avg_dy -= 1;
-			cout << "		############ this is dw" << endl;
+			cout << abs(avg_dy) <<"	  ########### this Y is dw"<<num << endl;
 
 		}
-	} else if(avg_dy % 2 == 1){
-		avg_dy+=0; // 越多右圖越往上
-		cout << "		############ this is else" << endl;
+	} 
+	else if(avg_dy % 2 == 1){
+		//avg_dy+=0; // 越多右圖越往上
+		//avg_dx-=1; // 越多右圖越往上
+		cout << "		############ this Y is else"<<num << endl;
 	}
-
+	cout << endl;
 	// 假如 y 的偏移量大於圖片高
 	int xM, yM;
 	if(avg_dy > imgA.height) {
