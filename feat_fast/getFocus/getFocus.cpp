@@ -169,7 +169,7 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 
 	// 假如 y 的偏移量大於圖片高
 	int xM, yM;
-	if(dy > imgA.height) {
+	if(avg_dy > imgA.height) {
 		int dyy = -((int)imgA.height - abs((int)imgA.height - avg_dy));
 		int xMove = avg_dx;
 		int yMove = dyy;
