@@ -47,35 +47,50 @@ static void focalsFromHomography(const vector<double> &HomogMat, double &f0, dou
 	else if (v1 > 0) f0 = std::sqrt(v1);
 	else f0_ok = false;
 }
-// 獲得焦距(所有圖共用一個ft).
-double getWarpFocal(const vector<double> &HomogMat, size_t img1Size, size_t img2Size) {
-	int img_total = 2;
-	double f0 = 0.f, f1 = 0.f, ft = 0.f;
-	bool f0ok = false, f1ok = false;
+// 從矩陣獲得焦距
+double estimateFocal(const vector<double> &HomogMat, size_t img1Size, size_t img2Size) {
+	const int num_images = 2;
+	double median;
 
 	vector<double> all_focals;
 	if(!HomogMat.empty()) {
+		double f0 ,f1;
+		bool f0ok, f1ok;
 		focalsFromHomography(HomogMat, f0, f1, f0ok, f1ok);
 		if(f0ok && f1ok) {
+			double temp = sqrtf(f0 * f1);
+			cout << "fff=" << temp << endl;
 			all_focals.push_back(sqrtf(f0 * f1));
 		}
 	}
-	if(all_focals.size() >= img_total - 1) {
-		sort(all_focals.begin(), all_focals.end());
+
+	if(all_focals.size() >= num_images - 1) {
+		std::sort(all_focals.begin(), all_focals.end());
 		if(all_focals.size() % 2 == 1) {
-			ft = all_focals[all_focals.size() / 2];
+			median = all_focals[all_focals.size() / 2];
 		} else {
-			ft = (all_focals[all_focals.size() / 2 - 1] + all_focals[all_focals.size() / 2]) * 0.5f;
+			median = (all_focals[all_focals.size() / 2 - 1] + all_focals[all_focals.size() / 2]) * 0.5f;
 		}
-	} else {
-		double focals_sum = 0.f;
+	} 
+	
+	else {
+		throw out_of_range("123");
+		double focals_sum = 0;
 		focals_sum += img1Size + img2Size;
-		ft = focals_sum / (double)img_total;
+		median = focals_sum / num_images;
 	}
 	//cout << "ft = " << ft << endl;
-	return ft;
+	return median;
 }
-
+// 估算焦距
+void estimateFocal(const vector<double> &HomogMat, double& focals) {
+	if (!HomogMat.empty()) {
+		double f0, f1;
+		bool f0ok, f1ok;
+		focalsFromHomography(HomogMat, f0, f1, f0ok, f1ok);
+		if (f0ok && f1ok) focals = std::sqrt(f0 * f1);
+	}
+}
 
 
 

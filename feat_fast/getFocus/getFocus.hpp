@@ -85,9 +85,7 @@ public:
 	float rY() const {return y/size;}
 };
 
-
-double getWarpFocal(const vector<double>& HomogMat, 
-	size_t img1Size, size_t img2Size);
+void estimateFocal(const vector<double>& HomogMat, double & focals);
 
 void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 	Feature const* const* good_match, int gm_num,

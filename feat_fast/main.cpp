@@ -68,18 +68,18 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	//====================================================================================
 
 	// 獲得偏差值
-	int mx=0, my=0; float ft=0;
+	int mx=0, my=0; double focals=0;
 	//t1.start();
-	ft = getWarpFocal(HomogMat, imgL.size(), imgR.size());
+	estimateFocal(HomogMat, focals);
 	//t1.print(" getWarpFocal"); // 0
 	//t1.start();
-	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, ft);
+	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, focals);
 	//t1.print(" getWarpOffset"); // 0.13
-	cout << "ft=" << ft << ", Ax=" << mx << ", Ay=" << my << ";" << endl;
+	cout << "ft=" << focals << ", Ax=" << mx << ", Ay=" << my << ";" << endl;
 	//====================================================================================
 	//t1.start();
-	//LapBlender(lapblend, warpL, warpR, ft, mx, my);
-	WarpPers_Stitch(lapblend, warpL, warpR, HomogMat);
+	LapBlender(lapblend, warpL, warpR, focals, mx, my);
+	//WarpPers_Stitch(lapblend, warpL, warpR, HomogMat);
 	//t1.print(" LapBlender"); // 0.022
 	//cout << "=======================================" << endl;
 	total.print("# total time"); //0.093
@@ -102,8 +102,8 @@ int main(int argc, char const *argv[]) {
 
 	//imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
 	//imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
-	//imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
 	//imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
 	//imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
 	//imgStitch("data\\DSC_2950.bmp", "data\\DSC_2951.bmp", "resultImg\\blend", 1);
