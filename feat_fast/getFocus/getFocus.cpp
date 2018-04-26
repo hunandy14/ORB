@@ -151,20 +151,22 @@ void getWarpOffset(const ImgRaw &imgA, const ImgRaw &imgB,
 		} else{
 			avg_dx -= 1;
 		}
+	} else if(avg_dx % 2 == 1) {
+		avg_dx += +0; // 越多右圖越往 <-
 	}
 	if(avg_dy % 2 == 0){
 		if(avg_dy + 1 <= imgA.height && avg_dy + 1 <= imgB.height){
 			avg_dy += 1;
-			//cout << "		############ this is up" << endl;
+			cout << "		############ this is up" << endl;
 
 		} else{
 			avg_dy -= 1;
-			//cout << "		############ this is dw" << endl;
+			cout << "		############ this is dw" << endl;
 
 		}
 	} else if(avg_dy % 2 == 1){
-		avg_dy+=1;
-		//cout << "		############ this is else" << endl;
+		avg_dy+=0; // 越多右圖越往上
+		cout << "		############ this is else" << endl;
 	}
 
 	// 假如 y 的偏移量大於圖片高

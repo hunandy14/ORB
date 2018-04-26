@@ -612,18 +612,35 @@ void delPillarboxing(const basic_ImgData &src, basic_ImgData &dst,
 void getOverlap(const basic_ImgData &src1, const basic_ImgData &src2,
 	basic_ImgData& cut1, basic_ImgData& cut2, vector<int> corner)
 {
+	// 新圖大小
+	int newH=corner[3]-corner[1]-abs(corner[5]);
+	int newW=corner[2]-corner[0]+corner[4];
 	// 偏移量
 	int mx=corner[4];
 	int my=corner[5];
-	// 新圖大小
-	int newH=corner[3]-corner[1]-abs(my);
-	int newW=corner[2]-corner[0]+mx;
 	// 重疊區大小
 	int lapH=newH;
-	int lapW=corner[2]-corner[0]-mx;
+	int lapW=corner[2]-corner[0]-corner[4];
+
+
 	// 兩張圖的高度偏差值
 	int myA = my<0? 0:my;
 	int myB = my>0? 0:-my;
+	int mxA = mx;
+	int mxB = mx;
+
+	// 修正單數偏差
+	if (lapH%2 == 1) {
+		if (my>0 ) {
+			myB+=2;
+		} else if(my<0) {
+			myB-=2;
+		}
+	}
+	if (lapW%2 == 0) {
+		mxB+=-2;
+	}
+	
 	// 重疊區
 	ImgData_resize(cut1, lapW, lapH, 24);
 	ImgData_resize(cut2, lapW, lapH, 24);
@@ -634,14 +651,14 @@ void getOverlap(const basic_ImgData &src1, const basic_ImgData &src2,
 			if (i < corner[2]-corner[0]-mx) {
 				for (int  rgb = 0; rgb < 3; rgb++) {
 					cut1.raw_img[(j*cut1.width +i) *3+rgb] = 
-						src1.raw_img[(((j+myA)+corner[1])*src1.width +(i+corner[0]+mx)) *3+rgb];
+						src1.raw_img[(((j+myA)+corner[1])*src1.width +(i+corner[0]+mxA)) *3+rgb];
 				}
 			}
 			// 圖2
 			if (i >= mx) {
 				for (int  rgb = 0; rgb < 3; rgb++) {
 					cut2.raw_img[(j*cut2.width +(i-mx)) *3+rgb] = 
-						src2.raw_img[(((j+myB)+corner[1])*src1.width +((i-mx)+corner[0])) *3+rgb];
+						src2.raw_img[(((j+myB)+corner[1])*src1.width +((i-mxB)+corner[0])) *3+rgb];
 				}
 			}
 		}
