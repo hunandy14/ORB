@@ -12,7 +12,7 @@ extern "C" {
 
 using namespace std;
 typedef unsigned char uchar;
-using OrbDest = bitset<128>;
+using OrbDest = bitset<256>;
 
 class Feat{
 public:

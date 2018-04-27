@@ -21,4 +21,3 @@ void WarpPers_Stitch(basic_ImgData & matchImg, const basic_ImgData & imgL, const
 // ´ú¸Õ¨ç¦¡
 void test1(string name, const vector<double>& HomogMat);
 void test_WarpPers_Stitch();
-void test_WarpPers_Stitch2(string name1, string name2);

@@ -19,6 +19,7 @@ using namespace cv;
 
 
 void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool autoname=0) {
+	static int num=0;
 	// 開圖
 	ImgRaw img1(name1, "", 0);
 	ImgRaw img1_gray = img1.ConverGray();
@@ -64,7 +65,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	Feature** RANSAC_feat=nullptr;
 	//RANSAC_feat = new Feature*[RANSAC_num];
 	getNewfeat(feat2, RANSAC_feat, RANSAC_num);
-	//featDrawLine2("_matchImg_RANSACImg.bmp", stackImg, RANSAC_feat, RANSAC_num);
+	//featDrawLine2("_matchImg_RANSACImg"+to_string(num)+".bmp", stackImg, RANSAC_feat, RANSAC_num);
 
 
 
@@ -90,30 +91,31 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	total.print("# total time"); // 93ms
 
 	
-	static int num=0;
+	
 	if (autoname) {
-		outName = outName+to_string(num++)+".bmp";
+		outName = outName+to_string(num)+".bmp";
 		cout << outName << endl;
 		ImgData_write(lapblend, outName);
 	}
 	else {
 		ImgData_write(lapblend, outName);
 	}
+	num++;
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
 	//imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
 	//imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
 
-	imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2952.bmp", "data\\DSC_2953.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2958.bmp", "data\\DSC_2959.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2952.bmp", "data\\DSC_2953.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2940.bmp", "data\\DSC_2941.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2958.bmp", "data\\DSC_2959.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2956.bmp", "data\\DSC_2957.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
+	//imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
 	
 	return 0;
 }

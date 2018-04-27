@@ -656,7 +656,7 @@ void fixOffset(vector<int>& corner, int x, int y) {
 				corner[4] -= offset; // 向右
 			}
 		}*/
-
+		
 		if (lapH%2 == 1 and abs(my) > 2 and lapW%2 == 0) {
 			// 向0靠近
 			offset=2;

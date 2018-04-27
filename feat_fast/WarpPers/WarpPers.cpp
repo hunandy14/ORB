@@ -262,7 +262,9 @@ void WarpPerspective_cut(const basic_ImgData &src, basic_ImgData &dst,
 //==================================================================================
 // 比例混合
 void AlphaBlend(basic_ImgData& matchImg, 
-	const basic_ImgData& imgL, const basic_ImgData& imgR) {
+	const basic_ImgData& imgL, const basic_ImgData& imgR
+	)
+{
 	// R 圖先補上去
 	matchImg=imgR;
 	// 比例混合
@@ -289,6 +291,9 @@ void AlphaBlend(basic_ImgData& matchImg,
 					imgL.raw_img[j*imgL.width*3 + i*3+1] != 0 or
 					imgL.raw_img[j*imgL.width*3 + i*3+2] != 0)
 				{
+
+					
+
 					// 這裡是重疊處.
 					if(start==end) {
 						start=i; // 紀錄起頭
@@ -297,15 +302,30 @@ void AlphaBlend(basic_ImgData& matchImg,
 						float len = end-start;
 						float ratioR = (i-start)/len;
 						float ratioL = 1.0 - ratioR;
-						matchImg.raw_img[j*matchImg.width*3 + i*3+0] = (unsigned char)//100;
-							(imgL.raw_img[j*imgL.width*3 + i*3+0]*ratioL + 
-							imgR.raw_img[j*imgR.width*3 + i*3+0]*ratioR);
-						matchImg.raw_img[j*matchImg.width*3 + i*3+1] = (unsigned char)//0;
-							(imgL.raw_img[j*imgL.width*3 + i*3+1]*ratioL + 
-							imgR.raw_img[j*imgR.width*3 + i*3+1]*ratioR);
-						matchImg.raw_img[j*matchImg.width*3 + i*3+2] = (unsigned char)//0;
-							(imgL.raw_img[j*imgL.width*3 + i*3+2]*ratioL + 
-							imgR.raw_img[j*imgR.width*3 + i*3+2]*ratioR);
+
+						// 左右各半混合
+						if ((i-start) < len/2) {
+							matchImg.raw_img[j*matchImg.width*3 + i*3+0] =
+								imgL.raw_img[j*imgL.width*3 + i*3+0];
+								//(unsigned char)100;
+							matchImg.raw_img[j*matchImg.width*3 + i*3+1] = 
+								imgL.raw_img[j*imgL.width*3 + i*3+1];
+								//(unsigned char)0;
+							matchImg.raw_img[j*matchImg.width*3 + i*3+2] = 
+								imgL.raw_img[j*imgL.width*3 + i*3+2];
+								//(unsigned char)0;
+						}
+						
+						// 比例混合
+						/*matchImg.raw_img[j*matchImg.width*3 + i*3+0] = (unsigned char)100;
+							//(imgL.raw_img[j*imgL.width*3 + i*3+0]*ratioL + 
+							//imgR.raw_img[j*imgR.width*3 + i*3+0]*ratioR);
+						matchImg.raw_img[j*matchImg.width*3 + i*3+1] = (unsigned char)0;
+							//(imgL.raw_img[j*imgL.width*3 + i*3+1]*ratioL + 
+							//imgR.raw_img[j*imgR.width*3 + i*3+1]*ratioR);
+						matchImg.raw_img[j*matchImg.width*3 + i*3+2] = (unsigned char)0;
+							//(imgL.raw_img[j*imgL.width*3 + i*3+2]*ratioL + 
+							//imgR.raw_img[j*imgR.width*3 + i*3+2]*ratioR);*/
 					}
 				}
 			}
