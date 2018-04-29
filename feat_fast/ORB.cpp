@@ -201,7 +201,7 @@ void create_ORB(const ImgRaw& img, Feat& feat) {
 
 // Herris 過濾 --> 8~10ms	
 	vector<Point2f> corners;
-	goodFeaturesToTrack2(gray, corners, 500, 0.01, 10, mask, 3, 3, true, 0.04); // 8~10ms
+	goodFeaturesToTrack2(gray, corners, 2000, 0.01, 10, mask, 3, 3, true, 0.04); // 8~10ms
 	//goodFeaturesToTrack(gray, corners, 1000, 0.01, 10, mask, 3, true, 0.04);
 	//cout << "Harris corner 數量 = " << corners.size() << endl;
 
@@ -263,31 +263,36 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<double>& HomogMat) {
 	int max_dist = 0; int min_dist = 100;
 	feat1.distance.resize(feat1.size());
 
-
+	vector<bool> f2_matched(feat2.size());
 #pragma omp parallel for
 	for(int j = 0; j < feat1.size(); j++) {
 		int dist = numeric_limits<int>::max();
 		int matchIdx = -1;
+		// f1 的這一點與所有 f2 匹配找最短距離
 		for(int i = 0; i < feat2.size(); i++) {
 			int distCurr = hamDist(feat1.bin[j], feat2.bin[i]);
 			// 距離較短則更新
-			if(distCurr < dist) {
+			if(distCurr < dist and f2_matched[i] == 0) {
 				dist = distCurr;
 				matchIdx = i;
 			}
 		}
 		// 加入匹配點
-		//cout << "dist=" << dist << endl;
-		if(dist > 16 /*or
+		cout << "dist=" << dist << endl;
+		if(dist > 24 /*or
 					 abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
 		{
+			// 沒配到的標記 -1 待會刪除
 			feat1.feat_match[j].x = -1;
 			feat1.feat_match[j].y = -1;
 		} else {
+			// 標記已經配過的f2點
+			f2_matched[matchIdx] = 1;
+			// 匹配成功
 			feat1.feat_match[j].x = feat2.feat[matchIdx].x;
 			feat1.feat_match[j].y = feat2.feat[matchIdx].y;
 			feat1.distance[j] = dist;
-			// 計算最大最小距離
+			// 紀錄最大最小距離(做簡單過濾用)
 			if(dist!=0 && dist < min_dist) min_dist = dist;
 			if(dist > max_dist) max_dist = dist;
 		}
@@ -298,14 +303,16 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<double>& HomogMat) {
 	//printf("-- Min dist : %d \n", min_dist);
 
 	//-- Draw only "good" matches (i.e. whose distance is less than 3*min_dist )
+	// 用距離來刪減可能錯誤的點(準度不是很好應該很容易出事)
+	// (發現找到的點已經很少了刪減沒什麼必要)
 	feat1.distance.resize(feat1.size());
 	for(int i = 0; i < feat1.size(); i++){
-		if(feat1.distance[i] > 5 * min_dist) {
+		if(feat1.distance[i] > 3 * min_dist) {
 			//cout << "TEST=" << endl;
 			//good_matches.push_back(matches[i]);
-			feat1.feat_match[i].x = -1;
+			/*feat1.feat_match[i].x = -1;
 			feat1.feat_match[i].y = -1;
-			feat1.distance[i] = 0;
+			feat1.distance[i] = 0;*/
 		}
 	}
 
@@ -327,6 +334,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<double>& HomogMat) {
 			featPoint2.push_back(pt2);
 		}
 	}
+
 	// get Homography and RANSAC mask
 	vector<char> RANSAC_mask;
 	Mat Hog = findHomography(featPoint1, featPoint2, RANSAC, 3, RANSAC_mask, 2000, 0.995);
