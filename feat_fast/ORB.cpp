@@ -278,7 +278,7 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<double>& HomogMat) {
 			}
 		}
 		// 加入匹配點
-		cout << "dist=" << dist << endl;
+		//cout << "dist=" << dist << endl;
 		if(dist > 24 /*or
 					 abs(feat1.feat[j].y - feat2.feat[matchIdx].y) > 1000*/ )
 		{

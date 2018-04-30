@@ -284,20 +284,29 @@ void WarpScale(const basic_ImgData &src, basic_ImgData &dst, double Ratio){
 	dst.width  = newW;
 	dst.height = newH;
 	dst.bits   = src.bits;
+	// 縮小的倍率
+	double r1W = ((double)src.width )/(dst.width );
+	double r1H = ((double)src.height)/(dst.height);
+	// 放大的倍率
+	double r2W = (src.width -1.0)/(dst.width -1.0);
+	double r2H = (src.height-1.0)/(dst.height-1.0);
+	// 縮小時候的誤差
+	double deviW = ((src.width-1.0)  - (dst.width -1.0)*(r1W)) /dst.width;
+	double deviH = ((src.height-1.0) - (dst.height-1.0)*(r1H)) /dst.height;
 	// 跑新圖座標
-
-	int i, j;
-#pragma omp parallel for private(i, j)
-	for (j = 0; j < newH; ++j) {
-		for (i = 0; i < newW; ++i) {
+#pragma omp parallel for
+	for (int j = 0; j < newH; ++j) {
+		for (int i = 0; i < newW; ++i) {
 			// 調整對齊
 			double srcY, srcX;
-			if (Ratio < 1) {
-				srcY = ((j+0.5f)/Ratio) - 0.5;
-				srcX = ((i+0.5f)/Ratio) - 0.5;
-			} else {
-				srcY = j*(src.height-1.f) / (newH-1.f);
-				srcX = i*(src.width -1.f) / (newW-1.f);
+			if (Ratio < 1.0) {
+				/*srcX = (i+0.5) * ((double)src.width /dst.width ) - 0.5;
+				srcY = (j+0.5) * ((double)src.height/dst.height) - 0.5;*/
+				srcX = i*(r1W+deviW);
+				srcY = j*(r1H+deviH);
+			} else if (Ratio >= 1.0) {
+				srcX = i*r2W;
+				srcY = j*r2H;
 			}
 			// 獲取插補值
 			unsigned char* p = &dst.raw_img[(j*newW + i) *3];

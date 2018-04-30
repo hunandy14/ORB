@@ -39,7 +39,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	//====================================================================================
 	Timer t1;
 	Timer total;
-	//t1.priSta=1;
+	t1.priSta=0;
 	// ORB
 	Feat feat, feat2;
 	t1.start();
@@ -65,7 +65,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	Feature** RANSAC_feat=nullptr;
 	//RANSAC_feat = new Feature*[RANSAC_num];
 	getNewfeat(feat2, RANSAC_feat, RANSAC_num);
-	featDrawLine2("resultImg\\_matchImg_RANSACImg"+to_string(num)+".bmp", stackImg, RANSAC_feat, RANSAC_num);
+	//featDrawLine2("resultImg\\_matchImg_RANSACImg"+to_string(num)+".bmp", stackImg, RANSAC_feat, RANSAC_num);
 
 
 
@@ -78,7 +78,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	//t1.start();
 	getWarpOffset(imgL, imgR, RANSAC_feat, RANSAC_num, mx, my, focals); // 0ms
 	//t1.print(" getWarpOffset");
-	cout << "ft=" << focals << ", Ax=" << mx << ", Ay=" << my << ";" << endl;
+	//cout << "ft=" << focals << ", Ax=" << mx << ", Ay=" << my << ";" << endl;
 
 
 
@@ -86,7 +86,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	//t1.start();
 	LapBlender(lapblend, warpL, warpR, focals, mx, my); // 22ms
 	//WarpPers_Stitch(lapblend, warpL, warpR, HomogMat);
-	//t1.print(" LapBlender");
+	t1.print(" LapBlender");
 	//cout << "=======================================" << endl;
 	total.print("# total time"); // 93ms
 
@@ -95,17 +95,17 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	if (autoname) {
 		outName = outName+to_string(num)+".bmp";
 		cout << outName << endl;
-		ImgData_write(lapblend, outName);
+		//ImgData_write(lapblend, outName);
 	}
 	else {
-		ImgData_write(lapblend, outName);
+		//ImgData_write(lapblend, outName);
 	}
 	num++;
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
 	imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
-	imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
+/*	imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
 
 	imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);
@@ -115,7 +115,7 @@ int main(int argc, char const *argv[]) {
 	imgStitch("data\\DSC_2956.bmp", "data\\DSC_2957.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2938.bmp", "data\\DSC_2939.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2942.bmp", "data\\DSC_2943.bmp", "resultImg\\blend", 1);
-	imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);
+	imgStitch("data\\DSC_2946.bmp", "data\\DSC_2947.bmp", "resultImg\\blend", 1);*/
 	
 	return 0;
 }
