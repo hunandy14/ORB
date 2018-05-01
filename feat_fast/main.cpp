@@ -65,7 +65,7 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	Feature** RANSAC_feat=nullptr;
 	//RANSAC_feat = new Feature*[RANSAC_num];
 	getNewfeat(feat2, RANSAC_feat, RANSAC_num);
-	//featDrawLine2("resultImg\\_matchImg_RANSACImg"+to_string(num)+".bmp", stackImg, RANSAC_feat, RANSAC_num);
+	featDrawLine2("resultImg\\_matchImg_RANSACImg"+to_string(num)+".bmp", stackImg, RANSAC_feat, RANSAC_num);
 
 
 
@@ -95,17 +95,19 @@ void imgStitch(string name1, string name2, string outName="__lapBlend.bmp", bool
 	if (autoname) {
 		outName = outName+to_string(num)+".bmp";
 		cout << outName << endl;
-		//ImgData_write(lapblend, outName);
+		ImgData_write(lapblend, outName);
 	}
 	else {
-		//ImgData_write(lapblend, outName);
+		ImgData_write(lapblend, outName);
 	}
 	num++;
 }
 //====================================================================================
 int main(int argc, char const *argv[]) {
-	imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
-/*	imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
+	imgStitch("srcImg\\kanna.bmp", "srcImg\\kanna90.bmp", "resultImg\\_test.bmp");
+
+	/*imgStitch("srcImg\\sc02.bmp", "srcImg\\sc03.bmp", "resultImg\\sc02_blend.bmp");
+	imgStitch("srcImg\\ball_01.bmp", "srcImg\\ball_02.bmp", "resultImg\\ball_01_blend.bmp");
 
 	imgStitch("data\\DSC_2936.bmp", "data\\DSC_2937.bmp", "resultImg\\blend", 1);
 	imgStitch("data\\DSC_2944.bmp", "data\\DSC_2945.bmp", "resultImg\\blend", 1);

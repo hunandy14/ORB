@@ -140,18 +140,18 @@ static OrbDest descriptor_ORB(const ImgRaw& img, int x, int y, double sing) {
 
 		// 描述點對
 		// todo 乾 這裡好像有錯
-		/*const int singIdx = sing/30.0;
-		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
-		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
-		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
-		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
-
-		// 不旋轉
-		const int singIdx = 0;
+		const int singIdx = sing/30.0;
 		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
 		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
 		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
 		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];
+
+		// 不旋轉
+		/*const int singIdx = 0;
+		int x1 = x + bit_pattern_31[singIdx][k*4 + 0];
+		int y1 = y + bit_pattern_31[singIdx][k*4 + 1];
+		int x2 = x + bit_pattern_31[singIdx][k*4 + 3];
+		int y2 = y + bit_pattern_31[singIdx][k*4 + 4];*/
 
 		bin[k] = Compare(img, x1, y1, x2, y2);
 	}
@@ -307,12 +307,12 @@ void matchORB(Feat& feat1, const Feat& feat2, vector<double>& HomogMat) {
 	// (發現找到的點已經很少了刪減沒什麼必要)
 	feat1.distance.resize(feat1.size());
 	for(int i = 0; i < feat1.size(); i++){
-		if(feat1.distance[i] > 3 * min_dist) {
-			//cout << "TEST=" << endl;
+		if(feat1.distance[i] > 6 * min_dist) {
+			cout << "TEST=" << endl;
 			//good_matches.push_back(matches[i]);
-			/*feat1.feat_match[i].x = -1;
+			feat1.feat_match[i].x = -1;
 			feat1.feat_match[i].y = -1;
-			feat1.distance[i] = 0;*/
+			feat1.distance[i] = 0;
 		}
 	}
 
